@@ -1,0 +1,136 @@
+﻿@using GarageV3.Helpers
+
+@model GarageV3.Models.ViewModels.ReceiptViewModel
+
+@{
+    ViewData["Title"] = "Garage Receipt";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div id="successAlert" class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<h1 class="mb-4">Garage Receipt</h1>
+
+<div class="card shadow-lg">
+
+    <div class="card-header bg-dark text-white">
+        <h3 class="mb-0">Receipt</h3>
+    </div>
+
+    <div class="card-body">
+
+        <p class="text-muted mb-4">
+            Thank you for using our garage services!
+        </p>
+
+        <h5 class="mb-3">Vehicle Information</h5>
+
+        <table class="table table-bordered table-striped">
+            <tbody>
+                <tr>
+                    <th style="width:35%">Registration Number</th>
+                    <td>@Model.RegistrationNumber</td>
+                </tr>
+
+                <tr>
+                    <th>Vehicle Type</th>
+                    <td>@Model.VehicleType</td>
+                </tr>
+               
+                <tr>
+                    <th>Parking Spot</th>
+                    <td>@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, Model.VehicleType)</td>
+                </tr>
+
+                <tr>
+                    <th>Brand</th>
+                    <td>@Model.Brand</td>
+                </tr>
+
+                <tr>
+                    <th>Model</th>
+                    <td>@Model.Model</td>
+                </tr>
+
+                <tr>
+                    <th>Color</th>
+                    <td>@Model.Color</td>
+                </tr>
+
+                <tr>
+                    <th>Number of Wheels</th>
+                    <td>@Model.NumberOfWheels</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-4 mb-3">Parking Information</h5>
+
+        <table class="table table-bordered table-striped">
+            <tbody>
+
+                <tr>
+                    <th style="width:35%">Arrival Time</th>
+                    <td>@Model.ArrivalTime.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+
+                <tr>
+                    <th>Check Out Time</th>
+                    <td>@Model.CheckOutTime.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+
+                <tr>
+                    <th>Parking Duration</th>
+                    <td>
+                        @Model.ParkingDuration.Days day(s)
+                        @Model.ParkingDuration.Hours h
+                        @Model.ParkingDuration.Minutes min
+                    </td>
+                </tr>
+
+                <tr class="table-success">
+                    <th>Parking Fee</th>
+                    <td class="fw-bold">
+                        @Model.TotalPrice.ToString("0.00") SEK
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+
+    </div>
+
+<div class="card-footer d-flex justify-content-between">
+
+    <small class="text-muted">
+        Thank you for visiting Garage 2.0
+    </small>
+
+    <div class="d-flex gap-2">
+
+        <button type="button"
+                class="btn btn-outline-secondary d-print-none"
+                onclick="window.print()">
+            Print Receipt
+        </button>
+
+        <a asp-action="Index"
+           class="btn sv-btn-create d-print-none">
+            Back to Garage
+        </a>
+
+    </div>
+
+</div>
+
+</div>
+
+@section Scripts {
+    <script>
+        fadeOutSuccessAlert();
+    </script>
+}

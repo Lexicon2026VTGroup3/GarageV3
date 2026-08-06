@@ -1,0 +1,60 @@
+﻿@model GarageV3.Models.ViewModels.ParkingOverviewViewModel
+
+<div class="alert alert-info mt-3">
+    <strong>@Model.FreeSpotCount</strong> of <strong>@Model.TotalSpots</strong> parking spots free
+</div>
+
+<div class="spot-grid mt-4">
+    @foreach (var spot in Model.Spots)
+    {
+        var isFull = !spot.IsFree;
+        var isMotorcycleShared = spot.OccupyingVehicleType == VehicleType.Motorcycle && spot.MotorcycleSlotsUsed > 0;
+        var isBicycleShared = spot.OccupyingVehicleType == VehicleType.Bicycle && spot.BicycleSlotsUsed > 0;
+
+        string fractionClass = isFull ? "spot-occupied" : "spot-free";
+        if (isMotorcycleShared)
+        {
+            if (spot.MotorcycleSlotsUsed == 1)
+                {fractionClass = "moto-1of3";}
+            else if (spot.MotorcycleSlotsUsed == 2)
+                {fractionClass = "moto-2of3";}
+        }
+        if (isBicycleShared)
+        {
+            if (spot.BicycleSlotsUsed == 1)
+                {fractionClass = "bicy-1of5";}
+            else if (spot.BicycleSlotsUsed == 2)
+                {fractionClass = "bicy-2of5";}
+            else if (spot.BicycleSlotsUsed == 3)
+                {fractionClass = "bicy-3of5";}
+            else if (spot.BicycleSlotsUsed == 4)
+                {fractionClass = "bicy-4of5";}
+        }
+
+        <div class="spot-gap 
+                    @(spot.IsLeftSpot ? "spot-left" : 
+                    spot.IsMiddleSpot ? "spot-middle" : 
+                    spot.IsRightSpot ? "spot-right" : 
+                    "spot-whole")"
+            title="@(spot.OccupyingVehicleRegNums != null 
+                    ? string.Join(", ", spot.OccupyingVehicleRegNums.Where(x => !string.IsNullOrWhiteSpace(x))) 
+                    : "")"
+        >
+            <div class="spot-tile @fractionClass">
+                <div class="spot-number">#@spot.SpotNumber</div>
+
+                <div class="spot-status">
+                    @spot.OccupyingVehicleType.GetDisplayIcon()
+
+                    @(isMotorcycleShared ? $"{spot.MotorcycleSlotsUsed}/3" :
+                        isBicycleShared ? $"{spot.BicycleSlotsUsed}/5" :
+                        !spot.IsFree ? (spot.OccupyingVehicleRegNums != null && !spot.IsMiddleSpot && !spot.IsRightSpot
+                                ? spot.OccupyingVehicleRegNums[0].Substring(0, 3) + "..." 
+                                : "") :
+                        "Free"
+                    )
+                </div>
+            </div>
+        </div>
+    }
+</div>

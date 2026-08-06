@@ -1,0 +1,283 @@
+﻿/* Sweden-themed styling for GarageV3 */
+
+:root {
+    --primary-color: #006AA7;
+    /* Swedish blue */
+    --secondary-color: #FFCD00;
+    /* Swedish yellow */
+    --secondary-color-soft: #FFE680;
+    --background-color: #f7faff;
+    /* Light background */
+    --text-color: #fff;
+    /* Bootstrap dark text */
+    --free-spot-color: #e6f7ec;
+}
+
+.sv-flag-bar {
+    height: 6px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-color) 45%, #FECC02 45%, #FECC02 55%, var(--primary-color) 55%, var(--primary-color) 100%);
+}
+
+.sv-flag-bar-rounded {
+    height: 6px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-color) 45%, #FECC02 45%, #FECC02 55%, var(--primary-color) 55%, var(--primary-color) 100%);
+}
+
+.sv-card {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 14px;
+    border: none;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.sv-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    width: 12ch;
+    white-space: nowrap;
+}
+
+.sv-label {
+    color: #8a8a8a;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.sv-back-link {
+    color: var(--primary-color);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+    .sv-back-link:hover {
+        text-decoration: underline;
+    }
+
+.sv-btn-primary, .sv-btn-create {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+    .sv-btn-primary:hover, .sv-btn-create:hover {
+        background-color: #005587;
+        border-color: #005587;
+        color: #fff;
+    }
+
+.sv-btn-details {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background-color: transparent;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    margin-right: 4px;
+}
+
+    .sv-btn-details:hover {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+    }
+
+.sv-header {
+    color: #004b7a;
+    font-weight: 700;
+}
+
+.sv-table thead {
+    --bs-table-bg: var(--primary-color);
+    --bs-table-color: #fff;
+    --bs-table-border-color: var(--primary-color);
+    background-color: var(--primary-color);
+}
+
+    .sv-table thead th {
+        color: #fff !important;
+        font-weight: 600;
+        border: none;
+        padding: 12px 16px;
+    }
+
+.sv-table tbody td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    border-color: #eee;
+}
+
+.sv-table tbody tr:hover {
+    background-color: #f0f7fb;
+}
+
+.sv-badge-sm {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background-color: #FECC02;
+    color: #1a1a1a;
+}
+
+.sv-action-btn {
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    margin-right: 4px;
+    border: none !important;
+}
+
+.sv-navbar {
+    background-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sv-navbar-brand {
+    font-weight: bold;
+    font-size: 1.4rem;
+    color: var(--text-color) !important;
+}
+
+.sv-navbar-brand:hover {
+    color: var(--secondary-color-soft) !important;
+}
+
+.sv-nav-link {
+    color: var(--text-color) !important;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.sv-nav-link:hover {
+    color: var(--secondary-color-soft) !important;
+}
+
+
+.spot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0;
+}
+
+.spot-gap {
+    padding: 5px;
+}
+
+.spot-tile {
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.spot-free {
+    background-color: var(--free-spot-color);
+    border-color: #b7e4c7;
+}
+
+.spot-occupied {
+    background-color: var(--secondary-color-soft);
+    border-color: var(--secondary-color);
+}
+
+.spot-number {
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+}
+
+.spot-status {
+    font-size: 0.8rem;
+    margin-top: 4px;
+    color: #333;
+}
+
+.moto-1of3 {
+    background: linear-gradient(
+        to right,
+        var(--secondary-color-soft) 33%,
+        var(--free-spot-color) 33%
+    );
+}
+
+.moto-2of3 {
+    background: linear-gradient(
+        to right,
+        var(--secondary-color-soft) 66%,
+        var(--free-spot-color) 66%
+    );
+}
+
+.bicy-1of5 {
+    background: linear-gradient(
+        to right,
+        var(--secondary-color-soft) 20%,
+        var(--free-spot-color) 20%
+    );
+}
+
+.bicy-2of5 {
+    background: linear-gradient(
+        to right,
+        var(--secondary-color-soft) 40%,
+        var(--free-spot-color) 40%
+    );
+}
+
+.bicy-3of5 {
+    background: linear-gradient(
+        to right,
+        var(--secondary-color-soft) 60%,
+        var(--free-spot-color) 60%
+    );
+}
+
+.bicy-4of5 {
+    background: linear-gradient(
+        to right,
+        var(--secondary-color-soft) 80%,
+        var(--free-spot-color) 80%
+    );
+}
+
+.spot-left {
+    border-left: 2px solid var(--secondary-color);
+    border-top: 2px solid var(--secondary-color);
+    border-bottom: 2px solid var(--secondary-color);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    margin: 5px 0 5px 5px;
+}
+
+.spot-middle {
+    border-left: none;
+    border-top: 2px solid var(--secondary-color);
+    border-bottom: 2px solid var(--secondary-color);
+    border-right: none;
+    margin: 5px 0;
+}
+
+.spot-right {
+    border-right: none;
+    border-top: 2px solid var(--secondary-color);
+    border-bottom: 2px solid var(--secondary-color);
+    border-right: 2px solid var(--secondary-color);
+    border-radius: 0 8px 8px 0;
+    margin: 5px 5px 5px 0;
+}
+
+.spot-whole {
+    margin: 5px;
+}

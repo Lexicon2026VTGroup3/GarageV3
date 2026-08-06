@@ -1,0 +1,72 @@
+:root {
+    --primary-color: #006AA7;
+    /* Swedish blue */
+    --primary-dark: #00588A;
+    --secondary-color: #FFCD00;
+    /* Swedish yellow */
+    --secondary-color-soft: #FFE680;
+    --background-color: #f7faff;
+    /* Light background */
+    --text-color: #fff;
+    /* Bootstrap dark text */
+}
+
+.garage-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.garage-icon:hover {
+    transform: translateY(-2px);
+    opacity: 0.7;
+}
+
+.garage-header {
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.garage-card {
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    padding: 20px;
+    background-color: var(--background-color);
+}
+
+.garage-btn {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    border: none;
+    transition: background-color .2s ease;
+}
+
+.garage-btn:hover {
+    background-color: var(--primary-dark);
+    color: var(--secondary-color);
+}
+
+.parked-duration {
+    font-size: 1.3rem;
+    color: var(--primary-color);
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+#searchBox::placeholder,
+#searchTimeBox::placeholder {
+    font-size: 0.8rem;   /* smaller text */
+    opacity: 0.7;        /* optional: lighter */
+}
+
+.readonly-plain {
+    background-color: #f8f9fa;
+    color: #333;
+    cursor: default;
+    pointer-events: none; 
+}

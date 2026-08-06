@@ -1,0 +1,14 @@
+﻿@model GarageV3.Models.ViewModels.ParkingOverviewViewModel
+
+@{
+    ViewData["Title"] = "Spot Overview";
+}
+<div class="container mt-4">
+    <a asp-action="Index" class="sv-back-link small">&larr; Back to overview</a>
+
+    <div class="garage-header">
+        <h3>Parking Spot Overview</h3>
+    </div>
+
+    <partial name="_SpotMap" model="Model" />
+</div>
