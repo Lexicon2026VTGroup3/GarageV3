@@ -14,11 +14,17 @@ namespace GarageV3.Services
             _context = context;
         }
 
-        public bool IsExisting(string regNumber)
+        public async Task<bool> IsExistingAsync(string regNumber, int? excludeId = null)
         {
-            // Normalize registration number (Trim + ToUpper)
-            regNumber = regNumber.Trim().ToUpperInvariant();
-            return _context.ParkedVehicle.Any(v => v.RegistrationNumber == regNumber);
+            if (string.IsNullOrWhiteSpace(regNumber))
+                return false;
+
+            var normalizedRegNumber = regNumber.Trim().ToUpperInvariant();
+
+            // If editing, we don't want to check for duplicates against the same record
+            return await _context.ParkedVehicles
+                .AnyAsync(v => v.RegistrationNumber == normalizedRegNumber &&
+                      (!excludeId.HasValue || v.Id != excludeId.Value));
         }
     }
 }

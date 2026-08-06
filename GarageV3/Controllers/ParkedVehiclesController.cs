@@ -316,12 +316,11 @@ public class ParkedVehiclesController : Controller
     }
 
     [HttpGet]
-    public IActionResult CheckDuplicate(string registrationNumber, int? id)
+    [AcceptVerbs("GET", "POST")]
+    public async Task<IActionResult> CheckDuplicate(string registrationNumber, int? id)
     {
         // If editing, we don't want to check for duplicates against the same record
-        bool isDuplicate = id.HasValue
-            ? false
-            : _context.ParkedVehicles.Any(v => v.RegistrationNumber == registrationNumber);
+        bool isDuplicate = await _vehicleHandler.IsExistingAsync(registrationNumber, id);
         return Json(!isDuplicate);
     }
 
