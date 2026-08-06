@@ -127,7 +127,7 @@ public class ParkedVehiclesController : Controller
             };
             bool isWeekName = weeks.Any(w => w.Contains(searchTimeStr));
 
-            bool isDouble = double.TryParse(searchTimeStr, out double doubleNumber);
+            // bool isDouble = double.TryParse(searchTimeStr, out double doubleNumber);
 
             vehicles = vehicles.Where(v =>
                 FormatDuration(v.ArrivalTime).Contains(searchTimeStr) ||
