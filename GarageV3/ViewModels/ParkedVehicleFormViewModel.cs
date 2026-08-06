@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
-namespace GarageV3.Models.ViewModels
+namespace GarageV3.ViewModels
 {
     public class ParkedVehicleFormViewModel
     {

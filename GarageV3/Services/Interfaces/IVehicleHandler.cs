@@ -1,4 +1,4 @@
-namespace GarageV3.Services
+namespace GarageV3.Services.Interfaces
 {
     public interface IVehicleHandler
     {

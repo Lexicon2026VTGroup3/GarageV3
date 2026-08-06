@@ -1,7 +1,7 @@
 ﻿using GarageV3.Models.Entities;
 using GarageV3.Models.Enums;
 
-namespace GarageV3.Models.ViewModels
+namespace GarageV3.ViewModels
 {
     // ViewModel used to display a parking receipt after a vehicle is checked out.
     public class ReceiptViewModel

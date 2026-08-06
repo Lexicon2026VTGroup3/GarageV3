@@ -1,12 +1,13 @@
 using GarageV3.Models.Entities;
 using GarageV3.Models.Enums;
-using GarageV3.Models.ViewModels;
 using GarageV3.Services;
 using GarageV3.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using GarageV3.Services.Interfaces;
+using GarageV3.ViewModels;
 
 
 public class ParkedVehiclesController : Controller

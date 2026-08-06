@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using GarageV3.Models.Entities;
 using GarageV3.Data;
+using GarageV3.Services.Interfaces;
 
 namespace GarageV3.Services
 {

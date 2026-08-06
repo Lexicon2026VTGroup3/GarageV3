@@ -1,6 +1,6 @@
 ﻿using GarageV3.Models.Parking;
 
-namespace GarageV3.Models.ViewModels
+namespace GarageV3.ViewModels
 {
     public class ParkingOverviewViewModel
     {

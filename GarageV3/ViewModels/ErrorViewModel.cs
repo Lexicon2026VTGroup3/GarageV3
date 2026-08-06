@@ -1,4 +1,4 @@
-namespace GarageV3.Models.ViewModels
+namespace GarageV3.ViewModels
 {
     public class ErrorViewModel
     {
