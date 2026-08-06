@@ -44,7 +44,7 @@
                 <div class="spot-number">#@spot.SpotNumber</div>
 
                 <div class="spot-status">
-                    @spot.OccupyingVehicleType.GetDisplayIcon()
+                    @spot.OccupyingVehicleType?.GetDisplayIcon()
 
                     @(isMotorcycleShared ? $"{spot.MotorcycleSlotsUsed}/3" :
                         isBicycleShared ? $"{spot.BicycleSlotsUsed}/5" :

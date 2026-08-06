@@ -38,10 +38,10 @@ public class ParkedVehiclesController : Controller
         {
             searchString= searchString.Trim().ToLower();
 
-            vehicleQuery = vehicleQuery.Where(
-                v => v.RegistrationNumber.ToLower().Contains(searchString) || 
+            vehicleQuery = vehicleQuery.Where(v =>
+                (v.RegistrationNumber != null && v.RegistrationNumber.ToLower().Contains(searchString)) ||
                 v.VehicleType.ToString().ToLower().Contains(searchString) ||
-                v.AssignedSpotNumber.ToString().Contains(searchString)
+                (v.AssignedSpotNumber != null && v.AssignedSpotNumber.ToString() == searchString)
             );
         }
 
@@ -271,7 +271,7 @@ public class ParkedVehiclesController : Controller
                     Color = viewModel.Color ?? string.Empty,
                     Brand = viewModel.Brand ?? string.Empty,
                     Model = viewModel.Model ?? string.Empty,
-                    NumberOfWheels = viewModel.NumberOfWheels.Value,
+                    NumberOfWheels = viewModel.NumberOfWheels.GetValueOrDefault(),
                     ArrivalTime = DateTime.Now
                 };
 
@@ -399,7 +399,7 @@ public class ParkedVehiclesController : Controller
                 original.Color = vm.Color ?? string.Empty;
                 original.Brand = vm.Brand ?? string.Empty;
                 original.Model = vm.Model ?? string.Empty;
-                original.NumberOfWheels = vm.NumberOfWheels.Value;
+                original.NumberOfWheels = vm.NumberOfWheels.GetValueOrDefault();
 
                 _context.Update(original);
                 await _context.SaveChangesAsync();

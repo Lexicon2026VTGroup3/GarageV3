@@ -9,10 +9,10 @@ namespace GarageV3.Models.Entities
     {
         public int Id { get; set; }
         public VehicleType VehicleType { get; set; }
-        public string RegistrationNumber { get; set; }
-        public string Color { get; set; }
-        public string Brand { get; set; }
-        public string Model { get; set; }
+        public required string RegistrationNumber { get; set; }
+        public string Color { get; set; } = string.Empty;
+        public string Brand { get; set; } = string.Empty;
+        public string Model { get; set; } = string.Empty;
         public int NumberOfWheels { get; set; }
         public DateTime ArrivalTime { get; set; }
 

@@ -11,12 +11,12 @@ namespace GarageV3.ViewModels
         public int? Id { get; set; } // null for Create, value for Edit
 
         [Required(ErrorMessage = "Registration Number is required.")]
-        [Remote(action: "CheckDuplicate", 
-            controller: "ParkedVehicles", 
-            AdditionalFields = nameof(Id), 
+        [Remote(action: "CheckDuplicate",
+            controller: "ParkedVehicles",
+            AdditionalFields = nameof(Id),
             ErrorMessage = "This registration number already exists!")]
         [Display(Name = "Registration Number")]
-        public string RegistrationNumber { get; set; }
+        public string RegistrationNumber { get; set; } = string.Empty;
 
         [Display(Name = "Arrival Time")]
         [DisplayFormat(DataFormatString = "{0:dddd, yyyy-MM-dd HH:mm}", ApplyFormatInEditMode = true)]
