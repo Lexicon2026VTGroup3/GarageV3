@@ -34,14 +34,14 @@ public class ParkedVehiclesController : Controller
     {
         var vehicleQuery = _context.ParkedVehicle.AsQueryable();
 
-        if (!string.IsNullOrEmpty(searchString))
+        if (!string.IsNullOrWhiteSpace(searchString))
         {
-            searchString= searchString.Trim().ToLower();
+            var searchStr = searchString.Trim().ToLower();
 
             vehicleQuery = vehicleQuery.Where(v =>
-                (v.RegistrationNumber != null && v.RegistrationNumber.ToLower().Contains(searchString)) ||
-                v.VehicleType.ToString().ToLower().Contains(searchString) ||
-                (v.AssignedSpotNumber != null && v.AssignedSpotNumber.ToString() == searchString)
+                (v.RegistrationNumber != null && v.RegistrationNumber.ToLower().Contains(searchStr)) ||
+                v.VehicleType.ToString().ToLower().Contains(searchStr) ||
+                (v.AssignedSpotNumber != null && v.AssignedSpotNumber.ToString() == searchStr)
             );
         }
 
@@ -104,47 +104,47 @@ public class ParkedVehiclesController : Controller
             })
             .ToListAsync();
 
-        if (!string.IsNullOrEmpty(searchTime)) 
+        if (!string.IsNullOrWhiteSpace(searchTime)) 
         {
-            searchTime = searchTime.Trim().ToLower();
+            var searchTimeStr = searchTime.Trim().ToLower();
 
-            bool isDate = DateTime.TryParse(searchTime, out DateTime parsedDate);
+            bool isDate = DateTime.TryParse(searchTimeStr, out DateTime parsedDate);
 
-            bool hasColon = searchTime.Contains(":");
+            bool hasColon = searchTimeStr.Contains(":");
 
-            bool isNumber = int.TryParse(searchTime, out int number);
+            bool isNumber = int.TryParse(searchTimeStr, out int number);
 
             var months = new[]
             {
                 "january","february","march","april","may","june",
                 "july","august","september","october","november","december"
             };
-            bool isMonthName = months.Any(m => m.Contains(searchTime));
+            bool isMonthName = months.Any(m => m.Contains(searchTimeStr));
 
             var weeks = new[]
             {
                 "sunday", "monday","tuesday","wednesday","thursday","friday","saturday"
             };
-            bool isWeekName = weeks.Any(w => w.Contains(searchTime));
+            bool isWeekName = weeks.Any(w => w.Contains(searchTimeStr));
 
-            bool isDouble = double.TryParse(searchTime, out double doubleNumber);
+            bool isDouble = double.TryParse(searchTimeStr, out double doubleNumber);
 
             vehicles = vehicles.Where(v =>
-                FormatDuration(v.ArrivalTime).Contains(searchTime) ||
-                v.ArrivalTime.Hour.ToString().Contains(searchTime) ||
-                v.ArrivalTime.Minute.ToString().Contains(searchTime) ||
+                FormatDuration(v.ArrivalTime).Contains(searchTimeStr) ||
+                v.ArrivalTime.Hour.ToString().Contains(searchTimeStr) ||
+                v.ArrivalTime.Minute.ToString().Contains(searchTimeStr) ||
                 (isDate && hasColon && v.ArrivalTime.Hour == parsedDate.Hour && v.ArrivalTime.Minute == parsedDate.Minute) ||
                 (isDate && !hasColon && v.ArrivalTime.Date == parsedDate.Date) ||
                 (isNumber && (v.ArrivalTime.Year == number || v.ArrivalTime.Day == number || v.ArrivalTime.Month == number)) ||
-                (isMonthName && months[v.ArrivalTime.Month - 1].Contains(searchTime)) ||
-                (isWeekName && weeks[(int)v.ArrivalTime.DayOfWeek].Contains(searchTime))
+                (isMonthName && months[v.ArrivalTime.Month - 1].Contains(searchTimeStr)) ||
+                (isWeekName && weeks[(int)v.ArrivalTime.DayOfWeek].Contains(searchTimeStr))
             ).ToList();
         }
 
         ViewData["CurrentFilter"] = searchString;
         ViewData["CurrentTimeFilter"] = searchTime;
 
-        ViewData["RegSortParm"] = (string.IsNullOrEmpty(sortOrder) || sortOrder == "RegAsc") ? "RegDesc" : "RegAsc";
+        ViewData["RegSortParm"] = (string.IsNullOrWhiteSpace(sortOrder) || sortOrder == "RegAsc") ? "RegDesc" : "RegAsc";
         ViewData["TypeSortParm"] = sortOrder == "TypeAsc" ? "TypeDesc" : "TypeAsc";
         ViewData["SpotSortParm"] = sortOrder == "SpotAsc" ? "SpotDesc" : "SpotAsc";
 
@@ -247,7 +247,7 @@ public class ParkedVehiclesController : Controller
         // Normalize registration number (Trim + ToUpper)
         viewModel.RegistrationNumber = viewModel.RegistrationNumber.Trim().ToUpper();
 
-        bool regExists = await _context.ParkedVehicle.AnyAsync(v => v.RegistrationNumber == viewModel.RegistrationNumber);
+        bool regExists = await _vehicleHandler.IsExistingAsync(viewModel.RegistrationNumber);
 
         if (regExists)
         {
@@ -381,7 +381,7 @@ public class ParkedVehiclesController : Controller
 
         if (original.RegistrationNumber != vm.RegistrationNumber)
         {
-            bool regExists = await _context.ParkedVehicle.AnyAsync(v => v.RegistrationNumber == vm.RegistrationNumber);
+            bool regExists = await _vehicleHandler.IsExistingAsync(vm.RegistrationNumber, id);
 
             if (regExists)
             {
