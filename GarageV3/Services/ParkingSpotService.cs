@@ -235,7 +235,7 @@ namespace GarageV3.Services
                 for (int i = 0; i < required; i++)
                 {
                     var spot = overview[start - 1 + i];
-                    if (!spot.IsFree || spot.MotorcycleSlotsUsed > 0)
+                    if (!spot.IsFree || spot.MotorcycleSlotsUsed > 0 || spot.BicycleSlotsUsed > 0)
                     {
                         allFree = false;
                         break;
