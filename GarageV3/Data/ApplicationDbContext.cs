@@ -14,4 +14,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<GarageV3.Models.Entities.ParkedVehicle> ParkedVehicle { get; set; } = default!;
 
     public DbSet<ParkedVehicle> ParkedVehicles { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<ApplicationUser>()
+            .HasIndex(u => u.PersonalIdentityNumber)
+            .IsUnique();
+    }
 }

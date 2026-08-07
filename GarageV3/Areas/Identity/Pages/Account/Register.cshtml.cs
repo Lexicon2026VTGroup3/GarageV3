@@ -1,6 +1,17 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using GarageV3.Data;
+using GarageV3.Validation;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -9,15 +20,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Logging;
-using GarageV3.Data;
 
 namespace GarageV3.Areas.Identity.Pages.Account;
 
@@ -68,12 +70,32 @@ public class RegisterModel : PageModel
     ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
     ///     directly from your code. This API may change or be removed in future releases.
     /// </summary>
-    public class InputModel
+    public class InputModel : IValidatableObject
     {
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
+        /// [Required(ErrorMessage = "First name is required.")]
+        [Required(ErrorMessage = "Username is required.")]
+        [StringLength(50, ErrorMessage = "Username cannot exceed 50 characters.")]
+        [Display(Name = "User name")]
+        public string UserName { get; set; } = string.Empty;
+
+        [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters.")]
+        [Display(Name = "First Name")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Last name is required.")]
+        [StringLength(50, ErrorMessage = "Last name cannot exceed 50 characters.")]
+        [Display(Name = "Last Name")]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Personal identity number is required.")]
+        [ValidPersonalIdentityNumber]
+        [Display(Name = "Personal Identity Number")]
+        public string PersonalIdentityNumber { get; set; } = string.Empty;
+
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
@@ -97,6 +119,18 @@ public class RegisterModel : PageModel
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string? ConfirmPassword { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!string.IsNullOrWhiteSpace(FirstName) &&
+                FirstName.Equals(LastName, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return new ValidationResult(
+                    "First name and last name cannot be identical.",
+                    new[] { nameof(LastName) }
+                );
+            }
+        }
     }
 
 
@@ -112,7 +146,19 @@ public class RegisterModel : PageModel
         ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         if (ModelState.IsValid)
         {
+            string normalizedPin = NormalizePersonalIdentityNumber(Input.PersonalIdentityNumber);
+            bool pinExists = await _userManager.Users.AnyAsync(u => u.PersonalIdentityNumber == normalizedPin);
+            if (pinExists)
+            {
+                ModelState.AddModelError("Input.PersonalIdentityNumber", "Personal identity number is already registered.");
+                return Page();
+            }
+
             var user = CreateUser();
+            user.UserName = Input.UserName;
+            user.FirstName = Input.FirstName;
+            user.LastName = Input.LastName;
+            user.PersonalIdentityNumber = normalizedPin;
 
             await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
             await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
@@ -175,5 +221,15 @@ public class RegisterModel : PageModel
             throw new NotSupportedException("The default UI requires a user store with email support.");
         }
         return (IUserEmailStore<ApplicationUser>)_userStore;
+    }
+
+    private static string NormalizePersonalIdentityNumber(string input)
+    {
+        string cleaned = input.Replace("-", "").Replace("+", "").Trim();
+        if (cleaned.Length == 12)
+        {
+            return $"{cleaned[..8]}-{cleaned[8..]}";
+        }
+        return input;
     }
 }
