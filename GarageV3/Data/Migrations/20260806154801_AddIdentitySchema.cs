@@ -10,6 +10,10 @@ namespace GarageV3.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_AspNetUserTokens",
+                table: "AspNetUserTokens");
+
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
                 table: "AspNetUserTokens",
@@ -28,6 +32,15 @@ namespace GarageV3.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "nvarchar(450)");
 
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_AspNetUserTokens",
+                table: "AspNetUserTokens",
+                columns: new[] { "UserId", "LoginProvider", "Name" });
+
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_AspNetUserLogins",
+                table: "AspNetUserLogins");
+
             migrationBuilder.AlterColumn<string>(
                 name: "ProviderKey",
                 table: "AspNetUserLogins",
@@ -45,6 +58,11 @@ namespace GarageV3.Data.Migrations
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "nvarchar(450)");
+
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_AspNetUserLogins",
+                table: "AspNetUserLogins",
+                columns: new[] { "LoginProvider", "ProviderKey" });
         }
 
         /// <inheritdoc />

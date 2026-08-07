@@ -24,6 +24,7 @@ builder.Services.AddScoped<GarageFeeService>();
 builder.Services.Configure<GarageSettings>(
     builder.Configuration.GetSection(GarageSettings.SectionName));
 builder.Services.AddScoped<IParkingSpotService, ParkingSpotService>();
+builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
 
 var app = builder.Build();
 

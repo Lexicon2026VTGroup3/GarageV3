@@ -14,4 +14,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<GarageV3.Models.Entities.ParkedVehicle> ParkedVehicle { get; set; } = default!;
 
     public DbSet<ParkedVehicle> ParkedVehicles { get; set; }
+
+    public DbSet<ParkingSession> ParkingSessions { get; set; } = default!;
 }
