@@ -23,4 +23,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasIndex(u => u.PersonalIdentityNumber)
             .IsUnique();
     }
+
+    public DbSet<ParkingSession> ParkingSessions { get; set; }
 }
