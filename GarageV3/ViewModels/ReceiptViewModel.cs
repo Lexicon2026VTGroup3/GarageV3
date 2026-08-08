@@ -1,5 +1,6 @@
 ﻿using GarageV3.Models.Entities;
 using GarageV3.Models.Enums;
+using VehicleType = GarageV3.Models.Enums.VehicleType;
 
 namespace GarageV3.ViewModels
 {

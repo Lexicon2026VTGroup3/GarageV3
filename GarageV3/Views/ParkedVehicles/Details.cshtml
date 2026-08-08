@@ -1,13 +1,13 @@
 @using GarageV3.Helpers
 
-@model GarageV3.Models.Entities.ParkedVehicle
+@model GarageV3.Models.Entities.Vehicle
 
 @{
     ViewData["Title"] = "Vehicle Details";
 
-    var badgeColor = VehicleTypeHelper.GetBadgeColor(Model.VehicleType);
-
-    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(Model.VehicleType);
+    var vehicleType = Model.VehicleTypeRef!.EnumValue;
+    var badgeColor = VehicleTypeHelper.GetBadgeColor(vehicleType);
+    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(vehicleType);
 }
 
 <div class="container">
@@ -47,7 +47,7 @@
                             <div>
                                 <h4 class="m-2 mt-0">@Model.RegistrationNumber</h4>
                                 <span class="sv-badge" style="background-color:@badgeColor; color:@badgeTextColor;">
-                                    @Model.VehicleType.GetDisplayName()
+                                    @vehicleType.GetDisplayName()
                                 </span>
                             </div>
                             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn sv-btn-details w-25">
@@ -69,7 +69,7 @@
                             <dd class="col-7 mb-0">@Model.NumberOfWheels</dd>
 
                             <dt class="col-5 sv-label">Parking Spot</dt>
-                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, Model.VehicleType)</dd>
+                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, vehicleType)</dd>
                         </dl>
                     </div>
                 </div>

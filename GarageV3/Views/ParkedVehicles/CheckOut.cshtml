@@ -1,13 +1,13 @@
 @using GarageV3.Helpers
 
-@model GarageV3.Models.Entities.ParkedVehicle
+@model GarageV3.Models.Entities.Vehicle
 
 @{
     ViewData["Title"] = "Check Out";
 
-    var badgeColor = VehicleTypeHelper.GetBadgeColor(Model.VehicleType);
-
-    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(Model.VehicleType);
+    var vehicleType = Model.VehicleTypeRef!.EnumValue;
+    var badgeColor = VehicleTypeHelper.GetBadgeColor(vehicleType);
+    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(vehicleType);
 }
 
 <div class="container">
@@ -37,17 +37,17 @@
                             <div class="parked-duration">
                                 <strong>Parked Duration: </strong>
                                 <span class="duration-cell"
-                                    data-arrival-time='@Model.ArrivalTime.ToString("yyyy-MM-ddTHH:mm:ss")'>
+                                      data-arrival-time='@Model.ArrivalTime.ToString("yyyy-MM-ddTHH:mm:ss")'>
                                 </span>
                             </div>
                         </div>
 
-                        <hr class="my-3"/>
+                        <hr class="my-3" />
 
                         <div class="mb-3">
                             <h4 class="m-2 mt-0">@Model.RegistrationNumber</h4>
                             <span class="sv-badge" style="background-color:@badgeColor; color:@badgeTextColor;">
-                                @Model.VehicleType.GetDisplayName()
+                                @vehicleType.GetDisplayName()
                             </span>
                         </div>
 
@@ -65,7 +65,7 @@
                             <dd class="col-7 mb-0">@Model.NumberOfWheels</dd>
 
                             <dt class="col-5 sv-label">Parking Spot</dt>
-                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, Model.VehicleType)</dd>
+                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, vehicleType)</dd>
                         </dl>
 
                         <form asp-action="CheckOut">
@@ -73,10 +73,12 @@
 
                             <div class="mt-4 d-flex gap-4">
                                 <button type="submit"
-                                    class="btn btn-danger w-50" >Check Out</button>
+                                        class="btn btn-danger w-50">
+                                    Check Out
+                                </button>
 
                                 <a asp-action="Index"
-                                class="btn btn-secondary w-50">
+                                   class="btn btn-secondary w-50">
                                     Cancel
                                 </a>
                             </div>

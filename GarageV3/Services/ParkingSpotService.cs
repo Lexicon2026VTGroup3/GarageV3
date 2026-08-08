@@ -2,7 +2,9 @@
 using GarageV3.Models.Enums;
 using GarageV3.Models.Parking;
 using GarageV3.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using VehicleType = GarageV3.Models.Enums.VehicleType;
 
 namespace GarageV3.Services
 {
@@ -26,20 +28,21 @@ namespace GarageV3.Services
 
         public IReadOnlyList<ParkingSpotInfo> GetSpotOverview()
         {
-            // Start with every spot free
             var spots = Enumerable.Range(1, TotalSpots)
                 .Select(n => new ParkingSpotInfo { SpotNumber = n, IsFree = true })
                 .ToList();
 
-            var parkedVehicles = _context.ParkedVehicle
+            var parkedVehicles = _context.Vehicles
+                .Include(v => v.VehicleTypeRef)
                 .Where(v => v.AssignedSpotNumber != null)
                 .ToList();
 
             foreach (var vehicle in parkedVehicles)
             {
                 int start = vehicle.AssignedSpotNumber!.Value;
+                var vehicleType = vehicle.VehicleTypeRef!.EnumValue;
 
-                if (VehicleSpotRequirement.IsMotorcycleType(vehicle.VehicleType))
+                if (VehicleSpotRequirement.IsMotorcycleType(vehicleType))
                 {
                     var spot = spots.FirstOrDefault(s => s.SpotNumber == start);
                     if (spot == null) continue;
@@ -56,7 +59,8 @@ namespace GarageV3.Services
                     {
                         spot.IsFree = false;
                     }
-                } else if (VehicleSpotRequirement.IsBicycleType(vehicle.VehicleType))
+                }
+                else if (VehicleSpotRequirement.IsBicycleType(vehicleType))
                 {
                     var spot = spots.FirstOrDefault(s => s.SpotNumber == start);
                     if (spot == null) continue;
@@ -69,7 +73,6 @@ namespace GarageV3.Services
                     }
                     spot.OccupyingVehicleRegNums[spot.BicycleSlotsUsed - 1] = vehicle.RegistrationNumber;
 
-
                     if (spot.BicycleSlotsUsed >= VehicleSpotRequirement.BicycleSlotsPerSpot)
                     {
                         spot.IsFree = false;
@@ -77,7 +80,7 @@ namespace GarageV3.Services
                 }
                 else
                 {
-                    int required = VehicleSpotRequirement.GetRequiredWholeSpots(vehicle.VehicleType);
+                    int required = VehicleSpotRequirement.GetRequiredWholeSpots(vehicleType);
 
                     for (int i = 0; i < required; i++)
                     {
@@ -85,7 +88,7 @@ namespace GarageV3.Services
                         if (spot == null) continue;
 
                         spot.IsFree = false;
-                        spot.OccupyingVehicleType = vehicle.VehicleType;
+                        spot.OccupyingVehicleType = vehicleType;
                         spot.OccupyingVehicleId = vehicle.Id;
                         if (spot.OccupyingVehicleRegNums == null)
                         {
@@ -93,7 +96,8 @@ namespace GarageV3.Services
                         }
                         spot.OccupyingVehicleRegNums[0] = vehicle.RegistrationNumber;
 
-                        if (required > 1) {
+                        if (required > 1)
+                        {
                             spot.IsLeftSpot = (i == 0);
                             spot.IsMiddleSpot = (i > 0 && i < required - 1);
                             spot.IsRightSpot = (i == required - 1);
@@ -112,7 +116,8 @@ namespace GarageV3.Services
             if (VehicleSpotRequirement.IsMotorcycleType(type))
             {
                 return HasFreeMotorcycleSlot(overview);
-            } else if (VehicleSpotRequirement.IsBicycleType(type))
+            }
+            else if (VehicleSpotRequirement.IsBicycleType(type))
             {
                 return HasFreeBicycleSlot(overview);
             }
@@ -131,7 +136,8 @@ namespace GarageV3.Services
                 if (VehicleSpotRequirement.IsMotorcycleType(type))
                 {
                     result[type] = HasFreeMotorcycleSlot(overview);
-                } else if (VehicleSpotRequirement.IsBicycleType(type))
+                }
+                else if (VehicleSpotRequirement.IsBicycleType(type))
                 {
                     result[type] = HasFreeBicycleSlot(overview);
                 }
@@ -147,7 +153,7 @@ namespace GarageV3.Services
 
         public ParkingAssignmentResult AssignSpot(VehicleType type, int vehicleId)
         {
-            var vehicle = _context.ParkedVehicle.FirstOrDefault(v => v.Id == vehicleId);
+            var vehicle = _context.Vehicles.FirstOrDefault(v => v.Id == vehicleId);
             if (vehicle == null)
             {
                 return ParkingAssignmentResult.Fail("Vehicle not found.");
@@ -169,7 +175,8 @@ namespace GarageV3.Services
                 vehicle.AssignedSpotNumber = spot.SpotNumber;
                 _context.SaveChanges();
                 return ParkingAssignmentResult.Ok(new List<int> { spot.SpotNumber });
-            } else if (VehicleSpotRequirement.IsBicycleType(type))
+            }
+            else if (VehicleSpotRequirement.IsBicycleType(type))
             {
                 var spot = overview.FirstOrDefault(s =>
                     s.BicycleSlotsUsed < VehicleSpotRequirement.BicycleSlotsPerSpot &&
@@ -202,10 +209,7 @@ namespace GarageV3.Services
 
         public void ReleaseSpot(int vehicleId)
         {
-            // Normally a no-op in practice: CheckOut removes the ParkedVehicle row entirely,
-            // which already frees the spot(s) since GetSpotOverview reads live from the DB.
-            // Kept for cases where a vehicle needs to be un-assigned without being removed.
-            var vehicle = _context.ParkedVehicle.FirstOrDefault(v => v.Id == vehicleId);
+            var vehicle = _context.Vehicles.FirstOrDefault(v => v.Id == vehicleId);
             if (vehicle == null) return;
 
             vehicle.AssignedSpotNumber = null;

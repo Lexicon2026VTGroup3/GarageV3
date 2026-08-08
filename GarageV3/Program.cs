@@ -6,6 +6,8 @@ using GarageV3.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using GarageV3.Services.Interfaces;
+using Microsoft.Extensions.Options;
+
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
@@ -15,30 +17,33 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.R
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
 builder.Services.AddScoped<IVehicleHandler, VehicleHandler>();
 builder.Services.AddScoped<GarageFeeService>();
 
-// Del 2: garage parking spot settings + service
 builder.Services.Configure<GarageSettings>(
     builder.Configuration.GetSection(GarageSettings.SectionName));
 builder.Services.AddScoped<IParkingSpotService, ParkingSpotService>();
+builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
 
 var app = builder.Build();
 
-// Auto Migration: Update DB file and table automatically when the application starts.
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.EnsureCreated(); // Create DB file and table if they do not exist
+        context.Database.EnsureCreated();
 
-        AddSeedData(context, services);
+        // Roles and the admin user must exist BEFORE vehicles are seeded,
+        // since every vehicle now requires an OwnerId.
+        await DbInitializer.SeedRolesAndAdminAsync(app.Services);
+
+        AddVehicleTypeAndParkingSpotSeedData(context, services);
+        await AddSeedDataAsync(context, services);
     }
     catch (Exception ex)
     {
@@ -48,11 +53,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -71,48 +74,80 @@ app.MapControllerRoute(
 
 app.MapRazorPages();
 
-// Seed roles and admin user on app startup
-try
-{
-    await DbInitializer.SeedRolesAndAdminAsync(app.Services);
-}
-catch (Exception ex)
-{
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "An error occurred while seeding the database.");
-}
-
 app.Run();
 
 
-void AddSeedData(ApplicationDbContext context, IServiceProvider services)
+async Task AddSeedDataAsync(ApplicationDbContext context, IServiceProvider services)
 {
-    if (context.ParkedVehicles.Any())
+    if (context.Vehicles.Any())
     {
         return;
     }
 
-    var vehiclesToSeed = new List<ParkedVehicle>
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var adminUser = await userManager.FindByEmailAsync("admin@garage.com");
+
+    if (adminUser == null)
     {
-        new ParkedVehicle { VehicleType = VehicleType.Car, RegistrationNumber = "ABC123", Color = "Black", Brand = "Volvo", Model = "XC60", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddHours(-3) },
-        new ParkedVehicle { VehicleType = VehicleType.Motorcycle, RegistrationNumber = "KTM555", Color = "Orange", Brand = "KTM", Model = "Duke 390", NumberOfWheels = 2, ArrivalTime = DateTime.Now.AddDays(-1) },
-        new ParkedVehicle { VehicleType = VehicleType.Bus, RegistrationNumber = "BUS010", Color = "Red", Brand = "Scania", Model = "Citywide", NumberOfWheels = 6, ArrivalTime = DateTime.Now.AddHours(-8) },
-        new ParkedVehicle { VehicleType = VehicleType.Truck, RegistrationNumber = "TRK777", Color = "Blue", Brand = "Volvo", Model = "FH16", NumberOfWheels = 10, ArrivalTime = DateTime.Now.AddDays(-2) },
-        new ParkedVehicle { VehicleType = VehicleType.Bicycle, RegistrationNumber = "BIK111", Color = "Yellow", Brand = "Crescent", Model = "Kebne", NumberOfWheels = 2, ArrivalTime = DateTime.Now.AddMinutes(-30) },
-        new ParkedVehicle { VehicleType = VehicleType.Airplane, RegistrationNumber = "SAS901", Color = "White", Brand = "Airbus", Model = "A320neo", NumberOfWheels = 3, ArrivalTime = DateTime.Now.AddHours(-15) },
-        new ParkedVehicle { VehicleType = VehicleType.Boat, RegistrationNumber = "BOA999", Color = "White", Brand = "Buster", Model = "Magnum", NumberOfWheels = 0, ArrivalTime = DateTime.Now.AddHours(-12) },
-        new ParkedVehicle { VehicleType = VehicleType.Car, RegistrationNumber = "XYZ789", Color = "White", Brand = "Tesla", Model = "Model Y", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddHours(-5) },
-        new ParkedVehicle { VehicleType = VehicleType.Car, RegistrationNumber = "MLB442", Color = "Grey", Brand = "Volkswagen", Model = "Golf", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddMinutes(-45) },
-        new ParkedVehicle { VehicleType = VehicleType.Car, RegistrationNumber = "SWE999", Color = "Silver", Brand = "Polestar", Model = "Polestar 2", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddHours(-2) }
+        // Admin seeding didn't run yet for some reason; skip vehicle seeding rather than crash.
+        return;
+    }
+
+    var typesByEnum = context.VehicleTypes.ToDictionary(vt => vt.EnumValue, vt => vt.Id);
+
+    var vehiclesToSeed = new List<Vehicle>
+    {
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Car], OwnerId = adminUser.Id, RegistrationNumber = "ABC123", Color = "Black", Brand = "Volvo", Model = "XC60", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddHours(-3) },
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Motorcycle], OwnerId = adminUser.Id, RegistrationNumber = "KTM555", Color = "Orange", Brand = "KTM", Model = "Duke 390", NumberOfWheels = 2, ArrivalTime = DateTime.Now.AddDays(-1) },
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Bus], OwnerId = adminUser.Id, RegistrationNumber = "BUS010", Color = "Red", Brand = "Scania", Model = "Citywide", NumberOfWheels = 6, ArrivalTime = DateTime.Now.AddHours(-8) },
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Truck], OwnerId = adminUser.Id, RegistrationNumber = "TRK777", Color = "Blue", Brand = "Volvo", Model = "FH16", NumberOfWheels = 10, ArrivalTime = DateTime.Now.AddDays(-2) },
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Bicycle], OwnerId = adminUser.Id, RegistrationNumber = "BIK111", Color = "Yellow", Brand = "Crescent", Model = "Kebne", NumberOfWheels = 2, ArrivalTime = DateTime.Now.AddMinutes(-30) },
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Airplane], OwnerId = adminUser.Id, RegistrationNumber = "SAS901", Color = "White", Brand = "Airbus", Model = "A320neo", NumberOfWheels = 3, ArrivalTime = DateTime.Now.AddHours(-15) },
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Boat], OwnerId = adminUser.Id, RegistrationNumber = "BOA999", Color = "White", Brand = "Buster", Model = "Magnum", NumberOfWheels = 0, ArrivalTime = DateTime.Now.AddHours(-12) },
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Car], OwnerId = adminUser.Id, RegistrationNumber = "XYZ789", Color = "White", Brand = "Tesla", Model = "Model Y", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddHours(-5) },
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Car], OwnerId = adminUser.Id, RegistrationNumber = "MLB442", Color = "Grey", Brand = "Volkswagen", Model = "Golf", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddMinutes(-45) },
+        new Vehicle { VehicleTypeRefId = typesByEnum[VehicleType.Car], OwnerId = adminUser.Id, RegistrationNumber = "SWE999", Color = "Silver", Brand = "Polestar", Model = "Polestar 2", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddHours(-2) }
     };
 
-    context.ParkedVehicles.AddRange(vehiclesToSeed);
+    context.Vehicles.AddRange(vehiclesToSeed);
     context.SaveChanges();
 
     var parkingService = services.GetRequiredService<IParkingSpotService>();
 
     foreach (var vehicle in vehiclesToSeed)
     {
-        parkingService.AssignSpot(vehicle.VehicleType, vehicle.Id);
+        var enumValue = typesByEnum.First(kvp => kvp.Value == vehicle.VehicleTypeRefId).Key;
+        parkingService.AssignSpot(enumValue, vehicle.Id);
+    }
+}
+
+void AddVehicleTypeAndParkingSpotSeedData(ApplicationDbContext context, IServiceProvider services)
+{
+    if (!context.VehicleTypes.Any())
+    {
+        var vehicleTypes = new[]
+        {
+            new VehicleTypeEntity { Name = "Car", EnumValue = VehicleType.Car },
+            new VehicleTypeEntity { Name = "Motorcycle", EnumValue = VehicleType.Motorcycle },
+            new VehicleTypeEntity { Name = "Bus", EnumValue = VehicleType.Bus },
+            new VehicleTypeEntity { Name = "Truck", EnumValue = VehicleType.Truck },
+            new VehicleTypeEntity { Name = "Bicycle", EnumValue = VehicleType.Bicycle },
+            new VehicleTypeEntity { Name = "Airplane", EnumValue = VehicleType.Airplane },
+            new VehicleTypeEntity { Name = "Boat", EnumValue = VehicleType.Boat }
+        };
+
+        context.VehicleTypes.AddRange(vehicleTypes);
+        context.SaveChanges();
+    }
+
+    if (!context.ParkingSpots.Any())
+    {
+        var settings = services.GetRequiredService<IOptions<GarageSettings>>().Value;
+
+        var spots = Enumerable.Range(1, settings.TotalParkingSpots)
+            .Select(n => new ParkingSpot { Number = n, IsOutOfService = false });
+
+        context.ParkingSpots.AddRange(spots);
+        context.SaveChanges();
     }
 }
