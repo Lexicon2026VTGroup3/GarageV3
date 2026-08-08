@@ -2,6 +2,7 @@ using GarageV3.Models.Entities;
 using GarageV3.Models.Enums;
 using GarageV3.Services;
 using GarageV3.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -16,23 +17,28 @@ public class ParkedVehiclesController : Controller
     private readonly IVehicleHandler _vehicleHandler;
     private readonly GarageFeeService _garageFeeService;
     private readonly IParkingSpotService _parkingSpotService;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     public ParkedVehiclesController(
         ApplicationDbContext context,
         IVehicleHandler vehicleHandler,
         GarageFeeService garageFeeService,
-        IParkingSpotService parkingSpotService)
+        IParkingSpotService parkingSpotService,
+        UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _vehicleHandler = vehicleHandler;
         _garageFeeService = garageFeeService;
         _parkingSpotService = parkingSpotService;
+        _userManager = userManager;
     }
 
     // GET: PARKEDVEHICLES
     public async Task<IActionResult> Index(string searchString, string sortOrder, string searchTime)
     {
-        var vehicleQuery = _context.ParkedVehicle.AsQueryable();
+        var vehicleQuery = _context.Vehicles
+            .Include(v => v.VehicleTypeRef)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchString))
         {
@@ -40,7 +46,7 @@ public class ParkedVehiclesController : Controller
 
             vehicleQuery = vehicleQuery.Where(v =>
                 (v.RegistrationNumber != null && v.RegistrationNumber.ToLower().Contains(searchStr)) ||
-                v.VehicleType.ToString().ToLower().Contains(searchStr) ||
+                v.VehicleTypeRef!.EnumValue.ToString().ToLower().Contains(searchStr) ||
                 (v.AssignedSpotNumber != null && v.AssignedSpotNumber.ToString() == searchStr)
             );
         }
@@ -56,11 +62,11 @@ public class ParkedVehiclesController : Controller
                 break;
 
             case "TypeAsc":
-                vehicleQuery = vehicleQuery.OrderBy(v => v.VehicleType.ToString());
+                vehicleQuery = vehicleQuery.OrderBy(v => v.VehicleTypeRef!.EnumValue.ToString());
                 break;
 
             case "TypeDesc":
-                vehicleQuery = vehicleQuery.OrderByDescending(v => v.VehicleType.ToString());
+                vehicleQuery = vehicleQuery.OrderByDescending(v => v.VehicleTypeRef!.EnumValue.ToString());
                 break;
 
             case "SpotAsc":
@@ -97,14 +103,14 @@ public class ParkedVehiclesController : Controller
             .Select(v => new ParkedVehicleOverviewViewModel
             {
                 Id = v.Id,
-                VehicleType = v.VehicleType,
+                VehicleType = v.VehicleTypeRef!.EnumValue,
                 RegistrationNumber = v.RegistrationNumber,
                 ArrivalTime = v.ArrivalTime,
                 AssignedSpotNumber = v.AssignedSpotNumber
             })
             .ToListAsync();
 
-        if (!string.IsNullOrWhiteSpace(searchTime)) 
+        if (!string.IsNullOrWhiteSpace(searchTime))
         {
             var searchTimeStr = searchTime.Trim().ToLower();
 
@@ -126,8 +132,6 @@ public class ParkedVehiclesController : Controller
                 "sunday", "monday","tuesday","wednesday","thursday","friday","saturday"
             };
             bool isWeekName = weeks.Any(w => w.Contains(searchTimeStr));
-
-            // bool isDouble = double.TryParse(searchTimeStr, out double doubleNumber);
 
             vehicles = vehicles.Where(v =>
                 FormatDuration(v.ArrivalTime).Contains(searchTimeStr) ||
@@ -152,7 +156,6 @@ public class ParkedVehiclesController : Controller
         ViewData["DurationSortParm"] = sortOrder == "DurationAsc" ? "DurationDesc" : "DurationAsc";
         ViewData["CurrentSort"] = sortOrder;
 
-        // Del 2: free spot count for the landing page
         ViewData["FreeSpotCount"] = _parkingSpotService.GetFreeSpotCount();
         ViewData["TotalSpots"] = _parkingSpotService.TotalSpots;
 
@@ -171,10 +174,14 @@ public class ParkedVehiclesController : Controller
 
         return View(viewModel);
     }
+
     // GET: PARKEDVEHICLES/Statistics
     public async Task<IActionResult> Statistics()
     {
-        var vehicles = await _context.ParkedVehicle.AsNoTracking().ToListAsync();
+        var vehicles = await _context.Vehicles
+            .Include(v => v.VehicleTypeRef)
+            .AsNoTracking()
+            .ToListAsync();
 
         var now = DateTime.Now;
 
@@ -184,7 +191,7 @@ public class ParkedVehiclesController : Controller
             TotalWheels = vehicles.Sum(v => v.NumberOfWheels),
             EstimatedCurrentRevenue = vehicles.Sum(v => _garageFeeService.CalculateFee(v.ArrivalTime, now)),
             VehicleCountsByType = vehicles
-                .GroupBy(v => v.VehicleType)
+                .GroupBy(v => v.VehicleTypeRef!.EnumValue)
                 .ToDictionary(g => g.Key, g => g.Count()),
             AverageParkedDuration = vehicles.Any()
                 ? TimeSpan.FromMinutes(vehicles.Average(v => (now - v.ArrivalTime).TotalMinutes))
@@ -204,6 +211,7 @@ public class ParkedVehiclesController : Controller
 
         return View(viewModel);
     }
+
     // GET: PARKEDVEHICLES/Details/5
     public async Task<IActionResult> Details(int? id)
     {
@@ -212,7 +220,9 @@ public class ParkedVehiclesController : Controller
             return NotFound();
         }
 
-        var parkedvehicle = await _context.ParkedVehicle.AsNoTracking()
+        var parkedvehicle = await _context.Vehicles
+            .Include(v => v.VehicleTypeRef)
+            .AsNoTracking()
             .FirstOrDefaultAsync(m => m.Id == id);
         if (parkedvehicle == null)
         {
@@ -254,19 +264,31 @@ public class ParkedVehiclesController : Controller
             ModelState.AddModelError("RegistrationNumber", "The registration number already exists. Please enter a different one.");
         }
 
-        // Del 2: reject if there isn't actually room for this vehicle type
         if (!_parkingSpotService.CanParkVehicleType(viewModel.VehicleType))
         {
             ModelState.AddModelError("VehicleType", "There is no available parking spot for this vehicle type right now.");
+        }
+
+        var vehicleTypeEntity = await GetVehicleTypeEntityAsync(viewModel.VehicleType);
+        if (vehicleTypeEntity == null)
+        {
+            ModelState.AddModelError("VehicleType", "Selected vehicle type is not recognized.");
+        }
+
+        var ownerId = _userManager.GetUserId(User);
+        if (ownerId == null)
+        {
+            ModelState.AddModelError(string.Empty, "You must be logged in to check in a vehicle.");
         }
 
         if (ModelState.IsValid)
         {
             try
             {
-                var parkedvehicle = new ParkedVehicle
+                var parkedvehicle = new Vehicle
                 {
-                    VehicleType = viewModel.VehicleType,
+                    VehicleTypeRefId = vehicleTypeEntity!.Id,
+                    OwnerId = ownerId!,
                     RegistrationNumber = viewModel.RegistrationNumber,
                     Color = viewModel.Color ?? string.Empty,
                     Brand = viewModel.Brand ?? string.Empty,
@@ -278,13 +300,10 @@ public class ParkedVehiclesController : Controller
                 _context.Add(parkedvehicle);
                 await _context.SaveChangesAsync();
 
-                // Del 2: assign a fixed parking spot now that the vehicle has an Id
                 var assignmentResult = _parkingSpotService.AssignSpot(viewModel.VehicleType, parkedvehicle.Id);
 
                 if (!assignmentResult.Success)
                 {
-                    // Extremely unlikely race condition: spot became unavailable between
-                    // the check above and this point. Roll back the check-in.
                     _context.Remove(parkedvehicle);
                     await _context.SaveChangesAsync();
 
@@ -319,7 +338,6 @@ public class ParkedVehiclesController : Controller
     [AcceptVerbs("GET", "POST")]
     public async Task<IActionResult> CheckDuplicate(string registrationNumber, int? id)
     {
-        // If editing, we don't want to check for duplicates against the same record
         bool isDuplicate = await _vehicleHandler.IsExistingAsync(registrationNumber, id);
         return Json(!isDuplicate);
     }
@@ -332,7 +350,9 @@ public class ParkedVehiclesController : Controller
             return NotFound();
         }
 
-        var parkedvehicle = await _context.ParkedVehicle.FindAsync(id);
+        var parkedvehicle = await _context.Vehicles
+            .Include(v => v.VehicleTypeRef)
+            .FirstOrDefaultAsync(v => v.Id == id);
         if (parkedvehicle == null)
         {
             return NotFound();
@@ -342,7 +362,7 @@ public class ParkedVehiclesController : Controller
         {
             Id = parkedvehicle.Id,
             RegistrationNumber = parkedvehicle.RegistrationNumber,
-            VehicleType = parkedvehicle.VehicleType,
+            VehicleType = parkedvehicle.VehicleTypeRef!.EnumValue,
             Color = parkedvehicle.Color,
             Brand = parkedvehicle.Brand,
             Model = parkedvehicle.Model,
@@ -367,14 +387,15 @@ public class ParkedVehiclesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int? id, ParkedVehicleFormViewModel vm)
     {
-        // Normalize registration number (Trim + ToUpper)
         vm.RegistrationNumber = vm.RegistrationNumber.Trim().ToUpper();
         if (id != vm.Id)
         {
             return NotFound();
         }
 
-        var original = await _context.ParkedVehicle.AsNoTracking()
+        var original = await _context.Vehicles
+            .Include(v => v.VehicleTypeRef)
+            .AsNoTracking()
             .FirstOrDefaultAsync(v => v.Id == id);
 
         if (original == null) { return NotFound(); }
@@ -389,11 +410,17 @@ public class ParkedVehiclesController : Controller
             }
         }
 
+        var vehicleTypeEntity = await GetVehicleTypeEntityAsync(vm.VehicleType);
+        if (vehicleTypeEntity == null)
+        {
+            ModelState.AddModelError("VehicleType", "Selected vehicle type is not recognized.");
+        }
+
         if (ModelState.IsValid)
         {
             try
             {
-                original.VehicleType = vm.VehicleType;
+                original.VehicleTypeRefId = vehicleTypeEntity!.Id;
                 original.RegistrationNumber = vm.RegistrationNumber;
                 original.Color = vm.Color ?? string.Empty;
                 original.Brand = vm.Brand ?? string.Empty;
@@ -433,21 +460,15 @@ public class ParkedVehiclesController : Controller
             return NotFound();
         }
 
-        var parkedvehicle = await _context.ParkedVehicle.AsNoTracking()
+        var parkedvehicle = await _context.Vehicles
+            .Include(v => v.VehicleTypeRef)
+            .AsNoTracking()
             .FirstOrDefaultAsync(m => m.Id == id);
 
         if (parkedvehicle == null)
         {
             return NotFound();
         }
-
-        /* var viewModel = new CheckOutViewModel
-        {
-            Id = parkedvehicle.Id,
-            RegistrationNumber = parkedvehicle.RegistrationNumber,
-            VehicleType = parkedvehicle.VehicleType.ToString(),
-            ArrivalTime = parkedvehicle.ArrivalTime
-        }; */
 
         return View(parkedvehicle);
     }
@@ -457,7 +478,9 @@ public class ParkedVehiclesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CheckOutConfirmed(int? id)
     {
-        var parkedvehicle = await _context.ParkedVehicle.FindAsync(id);
+        var parkedvehicle = await _context.Vehicles
+            .Include(v => v.VehicleTypeRef)
+            .FirstOrDefaultAsync(v => v.Id == id);
 
         if (parkedvehicle == null)
         {
@@ -466,16 +489,14 @@ public class ParkedVehiclesController : Controller
 
         DateTime checkOutTime = DateTime.Now;
 
-        // Create the receipt data that will be displayed after check out
         var receiptViewModel = new ReceiptViewModel
         {
-            VehicleType = parkedvehicle.VehicleType,
+            VehicleType = parkedvehicle.VehicleTypeRef!.EnumValue,
             RegistrationNumber = parkedvehicle.RegistrationNumber,
             Brand = parkedvehicle.Brand,
             Model = parkedvehicle.Model,
             Color = parkedvehicle.Color,
             NumberOfWheels = parkedvehicle.NumberOfWheels,
-            //Ny kod for Spot in thr recept
             AssignedSpotNumber = parkedvehicle.AssignedSpotNumber,
             ArrivalTime = parkedvehicle.ArrivalTime,
             CheckOutTime = checkOutTime,
@@ -485,7 +506,7 @@ public class ParkedVehiclesController : Controller
                 checkOutTime)
         };
 
-        _context.ParkedVehicle.Remove(parkedvehicle);
+        _context.Vehicles.Remove(parkedvehicle);
 
         await _context.SaveChangesAsync();
 
@@ -519,7 +540,6 @@ public class ParkedVehiclesController : Controller
         return $"{days}d {hours}h {minutes}m , {days} d {hours} h {minutes} m";
     }
 
-    // Del 2: builds the VehicleType dropdown with unavailable types grayed out
     private IEnumerable<SelectListItem> BuildVehicleTypeSelectList()
     {
         var availability = _parkingSpotService.GetVehicleTypeAvailability();
@@ -534,5 +554,10 @@ public class ParkedVehiclesController : Controller
                 Value = ((int)v).ToString(),
                 Disabled = !(availability.TryGetValue(v, out var available) && available)
             });
+    }
+
+    private async Task<VehicleTypeEntity?> GetVehicleTypeEntityAsync(VehicleType type)
+    {
+        return await _context.VehicleTypes.FirstOrDefaultAsync(vt => vt.EnumValue == type);
     }
 }

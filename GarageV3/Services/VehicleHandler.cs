@@ -22,7 +22,7 @@ namespace GarageV3.Services
             var normalizedRegNumber = regNumber.Trim().ToUpperInvariant();
 
             // If editing, we don't want to check for duplicates against the same record
-            return await _context.ParkedVehicles
+            return await _context.Vehicles
                 .AnyAsync(v => v.RegistrationNumber == normalizedRegNumber &&
                       (!excludeId.HasValue || v.Id != excludeId.Value));
         }
