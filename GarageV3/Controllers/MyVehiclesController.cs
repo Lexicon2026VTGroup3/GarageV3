@@ -46,7 +46,7 @@ public class MyVehiclesController : Controller
         return View(vehicles);
     }
 
-    // GET: VEHICLES/Details/5
+    // GET: MyVehicles/Details/5
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null)
@@ -54,8 +54,13 @@ public class MyVehiclesController : Controller
             return NotFound();
         }
 
+        var userId = _userManager.GetUserId(User);
+
         var vehicle = await _context.Vehicles
-            .FirstOrDefaultAsync(m => m.Id == id);
+            .Include(v => v.VehicleTypeRef)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == id && m.OwnerId == userId);
+
         if (vehicle == null)
         {
             return NotFound();
