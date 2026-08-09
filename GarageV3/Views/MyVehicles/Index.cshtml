@@ -48,7 +48,7 @@
                             <td>@(item.AssignedSpotNumber.HasValue ? item.AssignedSpotNumber.ToString() : "Not assigned")</td>
                             <td class="text-end">
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Details</a>
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Update</a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Edit</a>
                                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger sv-action-btn w-sm-auto">Delete</a>
                             </td>
                         </tr>
