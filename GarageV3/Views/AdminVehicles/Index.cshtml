@@ -1,0 +1,62 @@
+﻿@model IEnumerable<GarageV3.ViewModels.AdminVehiclesIndexViewModel>
+
+@{
+    ViewData["Title"] = "Manage All Vehicles";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+        <h2>Manage All Vehicles</h2>
+
+        <a asp-action="Create" class="btn sv-btn-create d-flex align-items-center">
+            Register New Vehicle
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center mt-4" role="alert">
+            No vehicles registered in the system yet.
+        </div>
+    }
+    else
+    {
+        <div class="mb-3 text-muted">
+            <strong>@Model.Count()</strong> @(Model.Count() == 1 ? "vehicle registered." : "vehicles registered.")
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover sv-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Owner Email</th>
+                        <th>Vehicle Type</th>
+                        <th>Registration Number</th>
+                        <th>Brand / Model</th>
+                        <th>Color</th>
+                        <th>Assigned Spot</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><span class="text-muted">@item.OwnerEmail</span></td>
+                            <td>@item.VehicleTypeName</td>
+                            <td><strong>@item.RegistrationNumber</strong></td>
+                            <td>@item.Brand @item.Model</td>
+                            <td>@item.Color</td>
+                            <td>@(item.AssignedSpotNumber.HasValue ? item.AssignedSpotNumber.ToString() : "Not assigned")</td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Details</a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Edit</a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger sv-action-btn w-sm-auto">Delete</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
