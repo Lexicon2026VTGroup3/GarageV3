@@ -269,7 +269,7 @@ public class MyVehiclesController : Controller
         return View(vm);
     }
 
-    // GET: VEHICLES/Delete/5
+    // GET: MyVehicles/Delete/5
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null)
@@ -277,8 +277,13 @@ public class MyVehiclesController : Controller
             return NotFound();
         }
 
+        var userId = _userManager.GetUserId(User);
+
         var vehicle = await _context.Vehicles
-            .FirstOrDefaultAsync(m => m.Id == id);
+            .Include(v => v.VehicleTypeRef)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == id && m.OwnerId == userId);
+
         if (vehicle == null)
         {
             return NotFound();
@@ -287,18 +292,26 @@ public class MyVehiclesController : Controller
         return View(vehicle);
     }
 
-    // POST: VEHICLES/Delete/5
+    // POST: MyVehicles/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int? id)
+    public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var vehicle = await _context.Vehicles.FindAsync(id);
-        if (vehicle != null)
+        var userId = _userManager.GetUserId(User);
+
+        var vehicle = await _context.Vehicles
+            .FirstOrDefaultAsync(v => v.Id == id && v.OwnerId == userId);
+
+        if (vehicle == null)
         {
-            _context.Vehicles.Remove(vehicle);
+            return NotFound();
         }
 
+        _context.Vehicles.Remove(vehicle);
         await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Successfully deleted vehicle {vehicle.RegistrationNumber}.";
+
         return RedirectToAction(nameof(Index));
     }
 
