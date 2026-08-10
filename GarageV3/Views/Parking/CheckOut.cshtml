@@ -1,0 +1,115 @@
+@using GarageV3.Helpers
+
+@model GarageV3.ViewModels.Parking.CheckOutViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+
+    var vehicleType = VehicleTypeHelper.ToEnum(Model.VehicleType?.Name ?? "");
+    var badgeColor = VehicleTypeHelper.GetBadgeColor(vehicleType);
+    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(vehicleType);
+}
+
+<div class="container">
+    <div class="col-md-8 mx-auto">
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <a asp-action="Index" class="sv-back-link small">&larr; Back to overview</a>
+
+        <div class="garage-header">
+            <h3>@Model.Title</h3>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <div class="card sv-card mt-3">
+                    <div class="sv-flag-bar"></div>
+
+                    <div class="card-body p-4">
+                        @Html.HiddenFor(m => m.ParkingSessionId)
+                        @Html.HiddenFor(m => m.CheckInTime)
+
+                        <div class="alert alert-info">
+                            <div class="mb-2">
+                                <strong>Checked In Time:</strong>
+                                <span>@Model.CheckInTime.ToString("dddd, yyyy-MM-dd HH:mm")</span>
+                            </div>
+
+                            <div class="parked-duration">
+                                <strong>Parked Duration: </strong>
+                                <span class="duration-cell"
+                                      data-arrival-time='@Model.CheckInTime.ToString("yyyy-MM-ddTHH:mm:ss")'>
+                                </span>
+                            </div>
+
+                            <div class="parked-duration">
+                                <strong>Total Price: </strong>
+                                <span class="total-price-cell"
+                                      data-arrival-time='@Model.CheckInTime.ToString("yyyy-MM-ddTHH:mm:ss")'
+                                      data-hourly-rate='@Model.HourlyRateAtCheckIn'>
+                                </span>
+                            </div>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <div class="mb-3">
+                            <h4 class="m-2 mt-0">@Model.RegistrationNumber</h4>
+                            <span class="sv-badge" style="background-color:@badgeColor; color:@badgeTextColor;">
+                                @vehicleType.GetDisplayName()
+                            </span>
+                        </div>
+
+                        <dl class="row mb-0 gy-2">
+                            <dt class="col-5 sv-label">Color</dt>
+                            <dd class="col-7 mb-0">@Model.Color</dd>
+
+                            <dt class="col-5 sv-label">Brand</dt>
+                            <dd class="col-7 mb-0">@Model.Brand</dd>
+
+                            <dt class="col-5 sv-label">Model</dt>
+                            <dd class="col-7 mb-0">@Model.Model</dd>
+
+                            <dt class="col-5 sv-label">Wheels</dt>
+                            <dd class="col-7 mb-0">@Model.NumberOfWheels</dd>
+
+                            <dt class="col-5 sv-label">Parking Spot</dt>
+                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.ParkingSpotId, vehicleType)</dd>
+
+                            <dt class="col-5 sv-label">Hourly Rate</dt>
+                            <dd class="col-7 mb-0">@Model.HourlyRateAtCheckIn.ToString("C")</dd>
+                        </dl>
+
+                        <hr class="my-3" />
+
+                        <form asp-action="CheckOut" method="post">
+                            <input type="hidden" asp-for="ParkingSessionId" />
+                            <input type="hidden" asp-for="CheckInTime" />
+
+                            <h4 class="garage-header text-danger">Are you sure you want to check out this vehicle?</h4>
+
+                            <div class="mt-4 d-flex gap-4">
+                                <button type="submit"
+                                        class="btn btn-danger w-50">
+                                    Check Out
+                                </button>
+
+                                <a asp-action="Index"
+                                   class="btn btn-secondary w-50">
+                                    Cancel
+                                </a>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

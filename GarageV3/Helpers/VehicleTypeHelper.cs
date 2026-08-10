@@ -75,4 +75,19 @@ public static class VehicleTypeHelper
         return filtered.Append(hintOption);
     }
 
+    public static VehicleType ToEnum(string vehicleTypeName)
+    {
+        return vehicleTypeName switch
+        {
+            "Car" => VehicleType.Car,
+            "Motorcycle" => VehicleType.Motorcycle,
+            "Bus" => VehicleType.Bus,
+            "Truck" => VehicleType.Truck,
+            "Bicycle" => VehicleType.Bicycle,
+            "Airplane" => VehicleType.Airplane,
+            "Boat" => VehicleType.Boat,
+            _ => VehicleType.Car
+        };
+    }
+
 }
