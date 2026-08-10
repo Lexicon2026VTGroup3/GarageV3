@@ -1,2 +1,7 @@
 updateParkedDurations();
-setInterval(updateParkedDurations, 60000);
+updateTotalPrices()
+
+setInterval(() => {
+    updateParkedDurations();
+    updateTotalPrices();
+}, 60000);

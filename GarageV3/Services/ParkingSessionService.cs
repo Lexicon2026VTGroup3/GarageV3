@@ -36,9 +36,18 @@ namespace GarageV3.Services
 
         public async Task<ParkingSession?> CompleteSessionAsync(int sessionId)
         {
-            var session = await _context.ParkingSessions.FindAsync(sessionId);
+            var session = await _context.ParkingSessions
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v.Owner)
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v.VehicleTypeRef)
+                .Include(ps => ps.ParkingSpot)
+                .FirstOrDefaultAsync(ps => ps.Id == sessionId);
+
             if (session is null || session.CheckOutTime != null)
+            {
                 return null;
+            }
 
             var checkOutTime = DateTime.UtcNow;
             var hours = (decimal)(checkOutTime - session.ArriveTime).TotalHours;

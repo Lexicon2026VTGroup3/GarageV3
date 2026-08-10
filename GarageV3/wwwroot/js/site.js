@@ -57,3 +57,28 @@ function fadeOutSuccessAlert() {
         setTimeout(() => alertBox.remove(), 500);
     }, 3000);
 }
+
+function calculateTotalPrice(arrivalTimeString, hourlyRate) {
+    const arrival = new Date(arrivalTimeString);
+    const now = new Date();
+
+    const durationMs = now - arrival;
+    const durationHours = durationMs / (1000 * 60 * 60);
+
+    const totalPrice = durationHours * hourlyRate;
+
+    return totalPrice.toFixed(2);
+}
+
+function updateTotalPrices() {
+    const cells = document.querySelectorAll(".total-price-cell");
+
+    cells.forEach(cell => {
+        const arrival = cell.dataset.arrivalTime;
+        const rate = parseFloat(cell.dataset.hourlyRate);
+
+        const price = calculateTotalPrice(arrival, rate);
+
+        cell.textContent = price + " kr";
+    });
+}
