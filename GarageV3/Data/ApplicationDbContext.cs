@@ -11,18 +11,31 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
     }
 
-    public DbSet<GarageV3.Models.Entities.ParkedVehicle> ParkedVehicle { get; set; } = default!;
-
-    public DbSet<ParkedVehicle> ParkedVehicles { get; set; }
+    public DbSet<Vehicle> Vehicles { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
+        builder.Entity<Vehicle>()
+            .ToTable("Vehicles");
+
         builder.Entity<ApplicationUser>()
             .HasIndex(u => u.PersonalIdentityNumber)
             .IsUnique();
+
+        builder.Entity<ParkingSession>()
+            .Property(s => s.HourlyRateAtCheckIn)
+            .HasColumnType("decimal(10,2)");
+
+        builder.Entity<ParkingSession>()
+            .Property(s => s.TotalPrice)
+            .HasColumnType("decimal(10,2)");
     }
 
     public DbSet<ParkingSession> ParkingSessions { get; set; }
+
+    public DbSet<VehicleTypeEntity> VehicleTypes { get; set; }
+
+    public DbSet<ParkingSpot> ParkingSpots { get; set; }
 }

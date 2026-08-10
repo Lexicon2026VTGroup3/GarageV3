@@ -9,5 +9,7 @@
         public const string SectionName = "GarageSettings";
 
         public int TotalParkingSpots { get; set; }
+
+        public decimal HourlyRate { get; set; }
     }
 }

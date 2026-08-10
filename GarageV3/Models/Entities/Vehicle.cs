@@ -1,14 +1,20 @@
-﻿using GarageV3.Models.Enums;
+﻿using GarageV3.Data;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace GarageV3.Models.Entities
 {
     [Index(nameof(RegistrationNumber), IsUnique = true)]
-    public class ParkedVehicle
+    public class Vehicle
     {
         public int Id { get; set; }
-        public VehicleType VehicleType { get; set; }
+
+        public required int VehicleTypeRefId { get; set; }
+        public VehicleTypeEntity? VehicleTypeRef { get; set; }
+
+        public required string OwnerId { get; set; }
+        public ApplicationUser? Owner { get; set; }
+
         public required string RegistrationNumber { get; set; }
         public string Color { get; set; } = string.Empty;
         public string Brand { get; set; } = string.Empty;
@@ -16,11 +22,6 @@ namespace GarageV3.Models.Entities
         public int NumberOfWheels { get; set; }
         public DateTime ArrivalTime { get; set; }
 
-        /// <summary>
-        /// The starting parking spot number assigned to this vehicle (del 2).
-        /// For trucks/airplanes/boats this is the first of several contiguous spots.
-        /// Null until a spot has been assigned.
-        /// </summary>
         public int? AssignedSpotNumber { get; set; }
     }
 }
