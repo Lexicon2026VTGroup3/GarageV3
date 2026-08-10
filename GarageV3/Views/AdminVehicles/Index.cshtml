@@ -1,7 +1,7 @@
-﻿@model IEnumerable<GarageV3.ViewModels.AdminVehiclesIndexViewModel>
+﻿@model List<AdminVehiclesIndexViewModel>
 
 @{
-    ViewData["Title"] = "Manage All Vehicles";
+    ViewData["Title"] = "All User Vehicle Management";
 }
 
 <div class="container mt-4">
@@ -12,6 +12,19 @@
             Register New Vehicle
         </a>
     </div>
+
+    <form asp-action="Index" method="get" class="mb-4">
+        <div class="input-group">
+            <input type="text" name="searchQuery" value="@ViewData["CurrentFilter"]" class="form-control" placeholder="Search by owner email..." />
+            <button type="submit" class="btn btn-outline-primary">Search</button>
+            @if (!string.IsNullOrEmpty(ViewData["CurrentFilter"]?.ToString()))
+            {
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            }
+        </div>
+    </form>
+
+
 
     @if (!Model.Any())
     {

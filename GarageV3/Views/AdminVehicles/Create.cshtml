@@ -1,0 +1,48 @@
+﻿@model GarageV3.ViewModels.AdminVehicleCreateViewModel
+
+@{
+    ViewData["Title"] = "Register Vehicle";
+}
+
+<div class="container">
+    <div class="col-md-8 mx-auto">
+        <a asp-action="Index" class="sv-back-link small">&larr; Back to My Vehicles</a>
+
+        <div class="garage-header">
+            <h3>Register New Vehicle(Admin)</h3>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <div class="card sv-card mt-3">
+                    <div class="sv-flag-bar"></div>
+
+                    <div class="card-body p-4">
+                        <form asp-action="Create">
+                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                            <div class="mb-3">
+                                <label asp-for="OwnerId" class="control-label"></label>
+                                <select asp-for="OwnerId" asp-items="Model.Users" class="form-control">
+                                    <option value="">-- Select Vehicle Owner --</option>
+                                </select>
+                                <span asp-validation-for="OwnerId" class="text-danger"></span>
+                            </div>
+                            <partial name="_VehicleForm" model="Model" />
+
+                            <div class="form-group mt-4 d-flex gap-4">
+                                <button type="submit" class="btn garage-btn w-50">Register</button>
+                                <a asp-action="Index" class="btn btn-secondary w-50">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -28,13 +28,20 @@ public class AdminVehiclesController : Controller
     }
 
     // GET: VEHICLES
-    public async Task<IActionResult> Index()
+    [HttpGet]
+    public async Task<IActionResult> Index(string? searchQuery)
     {
-        var userId = _userManager.GetUserId(User);
-
-        var vehicles = await _context.Vehicles
+        var query = _context.Vehicles
             .Include(v => v.VehicleTypeRef)
             .Include(v => v.Owner)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            query = query.Where(v => v.Owner != null && v.Owner.Email != null && v.Owner.Email.Contains(searchQuery));
+        }
+
+        var vehicleItems = await query
             .Select(v => new AdminVehiclesIndexViewModel
             {
                 Id = v.Id,
@@ -46,11 +53,13 @@ public class AdminVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : string.Empty,
                 AssignedSpotNumber = v.AssignedSpotNumber,
-                OwnerEmail = v.Owner != null ? v.Owner.Email : "No Email"
+                OwnerEmail = v.Owner != null ? v.Owner.Email! : "No Email"
             })
             .ToListAsync();
 
-        return View(vehicles);
+        ViewData["CurrentFilter"] = searchQuery;
+
+        return View(vehicleItems);
     }
 
     // GET: MyVehicles/Details/5
@@ -77,9 +86,9 @@ public class AdminVehiclesController : Controller
     }
 
     // GET: VEHICLES/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
-        var viewModel = new ParkedVehicleFormViewModel
+        var viewModel = new AdminVehicleCreateViewModel
         {
             VehicleTypes = Enum.GetValues(typeof(VehicleType))
                               .Cast<VehicleType>()
@@ -87,7 +96,15 @@ public class AdminVehiclesController : Controller
                               {
                                   Value = t.ToString(),
                                   Text = t.ToString()
-                              })
+                              }),
+
+            Users = await _context.Users
+                                .Select(u => new SelectListItem
+                                {
+                                    Value = u.Id,
+                                    Text = u.Email
+                                })
+                                .ToListAsync()
         };
         return View(viewModel);
     }
@@ -97,7 +114,7 @@ public class AdminVehiclesController : Controller
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(ParkedVehicleFormViewModel viewModel)
+    public async Task<IActionResult> Create(AdminVehicleCreateViewModel viewModel)
     {
         viewModel.RegistrationNumber = viewModel.RegistrationNumber.Trim().ToUpper();
 
@@ -109,10 +126,9 @@ public class AdminVehiclesController : Controller
             ModelState.AddModelError("VehicleType", "Selected vehicle type is not recognized.");
         }
 
-        var userId = _userManager.GetUserId(User);
-        if (userId == null)
+        if (string.IsNullOrWhiteSpace(viewModel.OwnerId))
         {
-            ModelState.AddModelError(string.Empty, "You must be logged in to register a vehicle.");
+            ModelState.AddModelError("OwnerId", "You must select a vehicle owner.");
         }
 
         if (ModelState.IsValid)
@@ -122,7 +138,7 @@ public class AdminVehiclesController : Controller
                 var vehicle = new Vehicle
                 {
                     VehicleTypeRefId = vehicleTypeEntity!.Id,
-                    OwnerId = userId!,
+                    OwnerId = viewModel.OwnerId,
                     RegistrationNumber = viewModel.RegistrationNumber,
                     Color = viewModel.Color ?? string.Empty,
                     Brand = viewModel.Brand ?? string.Empty,
@@ -151,6 +167,14 @@ public class AdminVehiclesController : Controller
                 Text = v.ToString(),
                 Value = v.ToString()
             });
+
+        viewModel.Users = await _context.Users
+        .Select(u => new SelectListItem
+        {
+            Value = u.Id,
+            Text = u.Email
+        })
+        .ToListAsync();
 
         return View(viewModel);
     }
