@@ -63,26 +63,34 @@ public class AdminVehiclesController : Controller
     }
 
     // GET: MyVehicles/Details/5
+    [HttpGet]
     public async Task<IActionResult> Details(int? id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var userId = _userManager.GetUserId(User);
+        if (id == null) return NotFound();
 
         var vehicle = await _context.Vehicles
             .Include(v => v.VehicleTypeRef)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == id && m.OwnerId == userId);
+            .Include(v => v.Owner)
+            .FirstOrDefaultAsync(v => v.Id == id);
 
-        if (vehicle == null)
+        if (vehicle == null) return NotFound();
+
+        var viewModel = new AdminVehiclesIndexViewModel
         {
-            return NotFound();
-        }
+            Id = vehicle.Id,
+            RegistrationNumber = vehicle.RegistrationNumber,
+            Brand = vehicle.Brand,
+            Model = vehicle.Model,
+            Color = vehicle.Color,
+            NumberOfWheels = vehicle.NumberOfWheels,
+            ArrivalTime = vehicle.ArrivalTime,
+            VehicleType = vehicle.VehicleTypeRef.EnumValue,
+            VehicleTypeName = vehicle.VehicleTypeRef?.Name ?? "Unknown",
+            AssignedSpotNumber = vehicle.AssignedSpotNumber,
+            OwnerEmail = vehicle.Owner?.Email ?? "No Owner"
+        };
 
-        return View(vehicle);
+        return View(viewModel);
     }
 
     // GET: VEHICLES/Create
@@ -180,25 +188,20 @@ public class AdminVehiclesController : Controller
     }
 
     // GET: MyVehicles/Edit/5
+    // GET: AdminVehicles/Edit/5
+    [HttpGet]
     public async Task<IActionResult> Edit(int? id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var userId = _userManager.GetUserId(User);
+        if (id == null) return NotFound();
 
         var vehicle = await _context.Vehicles
             .Include(v => v.VehicleTypeRef)
-            .FirstOrDefaultAsync(v => v.Id == id && v.OwnerId == userId);
+            .Include(v => v.Owner)
+            .FirstOrDefaultAsync(v => v.Id == id);
 
-        if (vehicle == null)
-        {
-            return NotFound();
-        }
+        if (vehicle == null) return NotFound();
 
-        var vm = new ParkedVehicleFormViewModel
+        var vm = new AdminVehicleCreateViewModel
         {
             Id = vehicle.Id,
             RegistrationNumber = vehicle.RegistrationNumber,
@@ -208,6 +211,16 @@ public class AdminVehiclesController : Controller
             Model = vehicle.Model,
             NumberOfWheels = vehicle.NumberOfWheels,
             ArrivalTime = vehicle.ArrivalTime,
+
+            OwnerId = vehicle.OwnerId,
+
+            Users = await _context.Users
+                .Select(u => new SelectListItem
+                {
+                    Value = u.Id,
+                    Text = u.Email
+                })
+                .ToListAsync(),
 
             VehicleTypes = Enum.GetValues(typeof(VehicleType))
                 .Cast<VehicleType>()
@@ -224,7 +237,7 @@ public class AdminVehiclesController : Controller
     // POST: MyVehicles/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int? id, ParkedVehicleFormViewModel vm)
+    public async Task<IActionResult> Edit(int? id, AdminVehicleCreateViewModel vm)
     {
         if (id != vm.Id)
         {
@@ -237,7 +250,7 @@ public class AdminVehiclesController : Controller
 
         var original = await _context.Vehicles
             .Include(v => v.VehicleTypeRef)
-            .FirstOrDefaultAsync(v => v.Id == id && v.OwnerId == userId);
+            .FirstOrDefaultAsync(v => v.Id == id);
 
         if (original == null)
         {
@@ -259,11 +272,17 @@ public class AdminVehiclesController : Controller
             ModelState.AddModelError("VehicleType", "Selected vehicle type is not recognized.");
         }
 
+        if (string.IsNullOrWhiteSpace(vm.OwnerId))
+        {
+            ModelState.AddModelError("OwnerId", "You must select a vehicle owner.");
+        }
+
         if (ModelState.IsValid)
         {
             try
             {
                 original.VehicleTypeRefId = vehicleTypeEntity!.Id;
+                original.OwnerId = vm.OwnerId;
                 original.RegistrationNumber = vm.RegistrationNumber;
                 original.Color = vm.Color ?? string.Empty;
                 original.Brand = vm.Brand ?? string.Empty;
@@ -291,28 +310,29 @@ public class AdminVehiclesController : Controller
                 Value = v.ToString()
             });
 
+        vm.Users = await _context.Users
+        .Select(u => new SelectListItem
+        {
+            Value = u.Id,
+            Text = u.Email
+        })
+        .ToListAsync();
+
         return View(vm);
     }
 
     // GET: MyVehicles/Delete/5
+    [HttpGet]
     public async Task<IActionResult> Delete(int? id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var userId = _userManager.GetUserId(User);
+        if (id == null) return NotFound();
 
         var vehicle = await _context.Vehicles
             .Include(v => v.VehicleTypeRef)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == id && m.OwnerId == userId);
+            .Include(v => v.Owner)
+            .FirstOrDefaultAsync(v => v.Id == id);
 
-        if (vehicle == null)
-        {
-            return NotFound();
-        }
+        if (vehicle == null) return NotFound();
 
         return View(vehicle);
     }
@@ -322,20 +342,13 @@ public class AdminVehiclesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var userId = _userManager.GetUserId(User);
-
-        var vehicle = await _context.Vehicles
-            .FirstOrDefaultAsync(v => v.Id == id && v.OwnerId == userId);
-
-        if (vehicle == null)
+        var vehicle = await _context.Vehicles.FindAsync(id);
+        if (vehicle != null)
         {
-            return NotFound();
+            _context.Vehicles.Remove(vehicle);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"Vehicle {vehicle.RegistrationNumber} was successfully deleted.";
         }
-
-        _context.Vehicles.Remove(vehicle);
-        await _context.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = $"Successfully deleted vehicle {vehicle.RegistrationNumber}.";
 
         return RedirectToAction(nameof(Index));
     }
