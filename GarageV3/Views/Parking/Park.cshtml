@@ -1,0 +1,78 @@
+﻿@model GarageV3.ViewModels.ParkVehicleViewModel
+
+@{
+    ViewData["Title"] = "Park Vehicle";
+}
+
+<div class="container">
+    <div class="col-md-8 mx-auto">
+        <a asp-controller="ParkedVehicles" asp-action="Index" class="sv-back-link small">&larr; Back to overview</a>
+
+        <div class="garage-header">
+            <h3>Park a Vehicle</h3>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <div class="card sv-card mt-3">
+                    <div class="sv-flag-bar"></div>
+
+                    <div class="card-body p-4">
+                        @if (!Model.Vehicles!.Any())
+                        {
+                            <div class="alert alert-warning">
+                                You have no registered vehicles available to park. All your vehicles are either already parked, or you haven't registered any yet.
+                            </div>
+                        }
+
+                        <form asp-action="Park" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                            <div class="form-group mb-4">
+                                <label asp-for="VehicleId" class="control-label"></label>
+                                <select asp-for="VehicleId" asp-items="Model.Vehicles" class="form-control">
+                                    <option value="">-- Select a vehicle --</option>
+                                </select>
+                                <span asp-validation-for="VehicleId" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="control-label d-block mb-2">Parking Spot</label>
+                                <span asp-validation-for="ParkingSpotId" class="text-danger d-block mb-2"></span>
+
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var spot in Model.ParkingSpots!)
+                                    {
+                                        <input type="radio"
+                                               class="btn-check"
+                                               name="ParkingSpotId"
+                                               id="spot-@spot.Value"
+                                               value="@spot.Value"
+                                               autocomplete="off"
+                                               disabled="@spot.Disabled" />
+                                        <label class="btn @(spot.Disabled ? "btn-outline-secondary" : "btn-outline-success")"
+                                               style="min-width: 4.5rem;"
+                                               for="spot-@spot.Value">
+                                            @spot.Text
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="form-group mt-4 d-flex gap-4">
+                                <button type="submit" class="btn garage-btn w-50">Park Vehicle</button>
+                                <a asp-controller="ParkedVehicles" asp-action="Index" class="btn btn-secondary w-50">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
