@@ -33,6 +33,9 @@
                             <li class="nav-item">
                                 <a class="nav-link sv-nav-link" asp-controller="Parking" asp-action="Park">Park a Vehicle</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link sv-nav-link" asp-controller="MyVehicles" asp-action="Index">My Vehicles</a>
+                            </li>
                         }
                         <li class="nav-item">
                             <a class="nav-link sv-nav-link" asp-area="" asp-controller="ParkedVehicles" asp-action="Index">Overview</a>
@@ -43,12 +46,6 @@
                         <li class="nav-item">
                             <a class="nav-link sv-nav-link" asp-area="" asp-controller="ParkedVehicles" asp-action="Statistics">Statistics</a>
                         </li>
-                        @if (User.Identity != null && User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link sv-nav-link" asp-controller="MyVehicles" asp-action="Index">My Vehicles</a>
-                            </li>
-                        }
                         @if (User.IsInRole("Admin"))
                         
                             {<li class="nav-item">
