@@ -6,12 +6,17 @@ using GarageV3.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using GarageV3.Services.Interfaces;
+
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+    options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
@@ -20,12 +25,16 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
 builder.Services.AddScoped<IVehicleHandler, VehicleHandler>();
-builder.Services.AddScoped<GarageFeeService>();
+
+builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
+
+builder.Services.AddScoped<IParkingSpotService, ParkingSpotService>();
+
+builder.Services.AddSingleton<GarageFeeService>();
 
 // Del 2: garage parking spot settings + service
 builder.Services.Configure<GarageSettings>(
     builder.Configuration.GetSection(GarageSettings.SectionName));
-builder.Services.AddScoped<IParkingSpotService, ParkingSpotService>();
 
 var app = builder.Build();
 

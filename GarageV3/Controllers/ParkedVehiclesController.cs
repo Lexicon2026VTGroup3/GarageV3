@@ -16,17 +16,21 @@ public class ParkedVehiclesController : Controller
     private readonly IVehicleHandler _vehicleHandler;
     private readonly GarageFeeService _garageFeeService;
     private readonly IParkingSpotService _parkingSpotService;
+    private readonly IParkingSessionService _parkingSessionService;
+
 
     public ParkedVehiclesController(
         ApplicationDbContext context,
         IVehicleHandler vehicleHandler,
         GarageFeeService garageFeeService,
-        IParkingSpotService parkingSpotService)
+        IParkingSpotService parkingSpotService,
+        IParkingSessionService parkingSessionService)
     {
         _context = context;
         _vehicleHandler = vehicleHandler;
         _garageFeeService = garageFeeService;
         _parkingSpotService = parkingSpotService;
+        _parkingSessionService = parkingSessionService;
     }
 
     // GET: PARKEDVEHICLES
@@ -484,6 +488,16 @@ public class ParkedVehiclesController : Controller
                 parkedvehicle.ArrivalTime,
                 checkOutTime)
         };
+        if (parkedvehicle.AssignedSpotNumber.HasValue)
+        {
+            var session = await _parkingSessionService
+                .GetActiveSessionForSpotAsync(parkedvehicle.AssignedSpotNumber.Value);
+
+            if (session != null)
+            {
+                await _parkingSessionService.CompleteSessionAsync(session.Id);
+            }
+        }
 
         _context.ParkedVehicle.Remove(parkedvehicle);
 
