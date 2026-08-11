@@ -4,6 +4,13 @@
     ViewData["Title"] = "My Vehicles";
 }
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div id="successAlert" class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
         <h2>My Vehicles</h2>
@@ -58,3 +65,9 @@
         </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        fadeOutSuccessAlert();
+    </script>
+}
