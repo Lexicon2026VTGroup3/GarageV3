@@ -12,6 +12,8 @@ namespace GarageV3.Models.Parking
 
         public bool IsFree { get; set; }
 
+        public int? OccupyingVehicleTypeEntityId { get; set; }
+
         /// <summary>
         /// Set when a non-motorcycle vehicle occupies this spot
         /// (possibly spanning into following spot numbers).

@@ -1,32 +1,31 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
-namespace GarageV3.Models.Entities
+namespace GarageV3.ViewModels
 {
-    [Index(nameof(Name), IsUnique = true)]
-    public class VehicleTypeEntity
+    public class AdminVehicleTypeViewModel
     {
         public int Id { get; set; }
 
         [Required]
         [MaxLength(50)]
-        public required string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(10)]
-        public required string ShortName { get; set; }
+        public string ShortName { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(50)]
-        public required string Icon { get; set; }
+        public string Icon { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(20)]
-        public required string BadgeColor { get; set; }
+        public string BadgeColor { get; set; } = "#006AA7";
 
         [Required]
         [MaxLength(20)]
-        public required string BadgeTextColor { get; set; }
+        public string BadgeTextColor { get; set; } = "#ffffff";
 
         [Required]
         public int RequiredSpots { get; set; } = 1;

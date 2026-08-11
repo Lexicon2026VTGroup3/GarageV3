@@ -1,13 +1,9 @@
-﻿@using GarageV3.Helpers
-
-@model GarageV3.Models.Entities.Vehicle
+﻿@model GarageV3.Models.Entities.Vehicle
 
 @{
     ViewData["Title"] = "Delete Vehicle";
 
-    var vehicleType = Model.VehicleTypeRef!.EnumValue;
-    var badgeColor = VehicleTypeHelper.GetBadgeColor(vehicleType);
-    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(vehicleType);
+    var typeName = Model.VehicleTypeRef?.Name ?? "Unknown";
 }
 
 <div class="container">
@@ -27,8 +23,8 @@
                     <div class="card-body p-4">
                         <div class="mb-3">
                             <h4 class="m-2 mt-0">@Model.RegistrationNumber</h4>
-                            <span class="sv-badge" style="background-color:@badgeColor; color:@badgeTextColor;">
-                                @vehicleType.GetDisplayName()
+                            <span class="sv-badge">
+                                @typeName
                             </span>
                         </div>
 

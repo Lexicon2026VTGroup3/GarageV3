@@ -30,8 +30,18 @@
                     <ul class="navbar-nav">
                         @if (User.IsInRole("Admin"))
                         {
-                            <li class="nav-item">
-                                <a class="nav-link sv-nav-link" asp-controller="AdminVehicles" asp-action="Index">Management</a>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle sv-nav-link" href="#" id="managementDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Management
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="managementDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="AdminVehicles" asp-action="Index">Vehicles</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="AdminVehicleTypes" asp-action="Index">Vehicle Types</a>
+                                    </li>
+                                </ul>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link sv-nav-link" asp-controller="MyVehicles" asp-action="Index">My Vehicles</a>
@@ -40,7 +50,7 @@
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="MyVehicles" asp-action="Index">My Vehicles</a>
+                                <a class="nav-link sv-nav-link" asp-controller="MyVehicles" asp-action="Index">My Vehicles</a>
                             </li>
                         }
                         @if (User.Identity != null && User.Identity.IsAuthenticated)

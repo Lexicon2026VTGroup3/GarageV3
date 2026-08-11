@@ -110,10 +110,7 @@ namespace GarageV3.Controllers
         // GET: PARKEDVEHICLES/CheckOut/5
         public async Task<IActionResult> CheckOut(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var session = await _context.ParkingSessions
                 .Include(ps => ps.Vehicle)
@@ -124,24 +121,18 @@ namespace GarageV3.Controllers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(ps => ps.Id == id);
 
-            if (session == null || session.Vehicle == null)
-            {
-                return NotFound();
-            }
+            if (session == null || session.Vehicle == null) return NotFound();
 
             var viewModel = new CheckOutViewModel
             {
                 ParkingSessionId = session.Id,
-                OwnerEmail = ((session.Vehicle.Owner is null) || (session.Vehicle.Owner.Email is null)) ?
-                    "No Owner" :
-                    session.Vehicle.Owner.Email,
+                OwnerEmail = session.Vehicle.Owner?.Email ?? "No Owner",
                 RegistrationNumber = session.Vehicle.RegistrationNumber,
                 Brand = session.Vehicle.Brand,
                 Model = session.Vehicle.Model,
                 Color = session.Vehicle.Color,
                 NumberOfWheels = session.Vehicle.NumberOfWheels,
-                VehicleType = session.Vehicle.VehicleTypeRef,
-                VehicleTypeName = session.Vehicle.VehicleTypeRef?.EnumValue.GetDisplayName() ?? "Unknown",
+                VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
                 ParkingSpotId = session.ParkingSpot?.Id ?? -1,
                 CheckInTime = session.ArriveTime,
                 HourlyRateAtCheckIn = session.HourlyRateAtCheckIn
@@ -160,18 +151,18 @@ namespace GarageV3.Controllers
                 TempData["ErrorMessage"] = "Invalid session ID.";
                 return RedirectToAction("Index");
             }
-            Console.WriteLine($"CheckOutConfirmed called with id = {parkingSessionId}");
+
             var session = await _parkingSessionService.CompleteSessionAsync(parkingSessionId.Value);
 
             if (session == null || session.Vehicle == null)
             {
-                TempData["ErrorMessage"] = "Unable to checkout. The parking session was not found or is already checked out.";
+                TempData["ErrorMessage"] = "Unable to checkout. The parking session was not found.";
                 return RedirectToAction("CheckOut", new { id = parkingSessionId });
             }
 
             var receiptViewModel = new ReceiptViewModel
             {
-                VehicleType = session.Vehicle.VehicleTypeRef?.EnumValue ?? default,
+                VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
                 RegistrationNumber = session.Vehicle.RegistrationNumber,
                 Brand = session.Vehicle.Brand,
                 Model = session.Vehicle.Model,
@@ -184,7 +175,6 @@ namespace GarageV3.Controllers
             };
 
             TempData["Receipt"] = JsonSerializer.Serialize(receiptViewModel);
-
             TempData["SuccessMessage"] = $"Successfully checked out {receiptViewModel.RegistrationNumber}.";
 
             return RedirectToAction("Receipt", new { id = session.Id });

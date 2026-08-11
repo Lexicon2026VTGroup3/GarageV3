@@ -1,0 +1,65 @@
+﻿@model IEnumerable<GarageV3.ViewModels.AdminVehicleTypeViewModel>
+
+@{
+    ViewData["Title"] = "Vehicle Type Management";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+        <h2>Vehicle Types</h2>
+
+        <a asp-action="Create" class="btn sv-btn-create d-flex align-items-center">
+            Register New Vehicle Type
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center mt-4" role="alert">
+            No vehicle types registered in the system yet.
+        </div>
+    }
+    else
+    {
+        <div class="mb-3 text-muted">
+            <strong>@Model.Count()</strong> @(Model.Count() == 1 ? "vehicle type registered." : "vehicle types registered.")
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover sv-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Short Name</th>
+                        <th>Required Spots</th>
+                        <th>Max Vehicles</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><strong>@item.Name</strong></td>
+                            <td><span class="text-muted">@item.ShortName</span></td>
+                            <td><span class="text-muted">@item.RequiredSpots</span></td>
+                            <td><span class="text-muted">@item.MaxVehiclesPerSpot</span></td>
+                            <td class="text-end">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Edit</a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger sv-action-btn w-sm-auto">Delete</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

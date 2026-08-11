@@ -1,7 +1,5 @@
-﻿
-using GarageV3.Data;
+﻿using GarageV3.Data;
 using GarageV3.Models.Entities;
-using GarageV3.Models.Enums;
 using GarageV3.Services.Interfaces;
 using GarageV3.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -18,9 +16,9 @@ public class AdminVehiclesController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
 
     public AdminVehiclesController(
-    ApplicationDbContext context,
-    IVehicleHandler vehicleHandler,
-    UserManager<ApplicationUser> userManager)
+        ApplicationDbContext context,
+        IVehicleHandler vehicleHandler,
+        UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _vehicleHandler = vehicleHandler;
@@ -62,7 +60,7 @@ public class AdminVehiclesController : Controller
         return View(vehicleItems);
     }
 
-    // GET: MyVehicles/Details/5
+    // GET: AdminVehicles/Details/5
     [HttpGet]
     public async Task<IActionResult> Details(int? id)
     {
@@ -84,7 +82,6 @@ public class AdminVehiclesController : Controller
             Color = vehicle.Color,
             NumberOfWheels = vehicle.NumberOfWheels,
             ArrivalTime = vehicle.ArrivalTime,
-            VehicleType = vehicle.VehicleTypeRef.EnumValue,
             VehicleTypeName = vehicle.VehicleTypeRef?.Name ?? "Unknown",
             AssignedSpotNumber = vehicle.AssignedSpotNumber,
             OwnerEmail = vehicle.Owner?.Email ?? "No Owner"
@@ -98,40 +95,40 @@ public class AdminVehiclesController : Controller
     {
         var viewModel = new AdminVehicleCreateViewModel
         {
-            VehicleTypes = Enum.GetValues(typeof(VehicleType))
-                              .Cast<VehicleType>()
-                              .Select(t => new SelectListItem
-                              {
-                                  Value = t.ToString(),
-                                  Text = t.ToString()
-                              }),
+            VehicleTypes = await _context.VehicleTypes
+                .Select(vt => new SelectListItem
+                {
+                    Value = vt.Id.ToString(),
+                    Text = vt.Name
+                })
+                .ToListAsync(),
 
             Users = await _context.Users
-                                .Select(u => new SelectListItem
-                                {
-                                    Value = u.Id,
-                                    Text = u.Email
-                                })
-                                .ToListAsync()
+                .Select(u => new SelectListItem
+                {
+                    Value = u.Id,
+                    Text = u.Email
+                })
+                .ToListAsync()
         };
         return View(viewModel);
     }
 
     // POST: VEHICLES/Create
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AdminVehicleCreateViewModel viewModel)
     {
         viewModel.RegistrationNumber = viewModel.RegistrationNumber.Trim().ToUpper();
 
-        var vehicleTypeEntity = await _context.VehicleTypes
-            .FirstOrDefaultAsync(vt => vt.EnumValue == viewModel.VehicleType);
+        int vehicleTypeId = 0;
+        int.TryParse(viewModel.VehicleTypeId, out vehicleTypeId);
+
+        var vehicleTypeEntity = await _context.VehicleTypes.FindAsync(vehicleTypeId);
 
         if (vehicleTypeEntity == null)
         {
-            ModelState.AddModelError("VehicleType", "Selected vehicle type is not recognized.");
+            ModelState.AddModelError("VehicleTypeId", "Selected vehicle type is not recognized.");
         }
 
         if (string.IsNullOrWhiteSpace(viewModel.OwnerId))
@@ -168,26 +165,25 @@ public class AdminVehiclesController : Controller
             }
         }
 
-        viewModel.VehicleTypes = Enum.GetValues(typeof(VehicleType))
-            .Cast<VehicleType>()
-            .Select(v => new SelectListItem
+        viewModel.VehicleTypes = await _context.VehicleTypes
+            .Select(vt => new SelectListItem
             {
-                Text = v.ToString(),
-                Value = v.ToString()
-            });
+                Value = vt.Id.ToString(),
+                Text = vt.Name
+            })
+            .ToListAsync();
 
         viewModel.Users = await _context.Users
-        .Select(u => new SelectListItem
-        {
-            Value = u.Id,
-            Text = u.Email
-        })
-        .ToListAsync();
+            .Select(u => new SelectListItem
+            {
+                Value = u.Id,
+                Text = u.Email
+            })
+            .ToListAsync();
 
         return View(viewModel);
     }
 
-    // GET: MyVehicles/Edit/5
     // GET: AdminVehicles/Edit/5
     [HttpGet]
     public async Task<IActionResult> Edit(int? id)
@@ -205,13 +201,12 @@ public class AdminVehiclesController : Controller
         {
             Id = vehicle.Id,
             RegistrationNumber = vehicle.RegistrationNumber,
-            VehicleType = vehicle.VehicleTypeRef!.EnumValue,
+            VehicleTypeId = vehicle.VehicleTypeRefId.ToString(),
             Color = vehicle.Color,
             Brand = vehicle.Brand,
             Model = vehicle.Model,
             NumberOfWheels = vehicle.NumberOfWheels,
             ArrivalTime = vehicle.ArrivalTime,
-
             OwnerId = vehicle.OwnerId,
 
             Users = await _context.Users
@@ -222,19 +217,19 @@ public class AdminVehiclesController : Controller
                 })
                 .ToListAsync(),
 
-            VehicleTypes = Enum.GetValues(typeof(VehicleType))
-                .Cast<VehicleType>()
-                .Select(v => new SelectListItem
+            VehicleTypes = await _context.VehicleTypes
+                .Select(vt => new SelectListItem
                 {
-                    Text = v.GetDisplayName(),
-                    Value = v.ToString()
+                    Value = vt.Id.ToString(),
+                    Text = vt.Name
                 })
+                .ToListAsync()
         };
 
         return View(vm);
     }
 
-    // POST: MyVehicles/Edit/5
+    // POST: AdminVehicles/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int? id, AdminVehicleCreateViewModel vm)
@@ -245,8 +240,6 @@ public class AdminVehiclesController : Controller
         }
 
         vm.RegistrationNumber = vm.RegistrationNumber.Trim().ToUpper();
-
-        var userId = _userManager.GetUserId(User);
 
         var original = await _context.Vehicles
             .Include(v => v.VehicleTypeRef)
@@ -266,10 +259,13 @@ public class AdminVehiclesController : Controller
             }
         }
 
-        var vehicleTypeEntity = await GetVehicleTypeEntityAsync(vm.VehicleType);
+        int vehicleTypeId = 0;
+        int.TryParse(vm.VehicleTypeId, out vehicleTypeId);
+        var vehicleTypeEntity = await _context.VehicleTypes.FindAsync(vehicleTypeId);
+
         if (vehicleTypeEntity == null)
         {
-            ModelState.AddModelError("VehicleType", "Selected vehicle type is not recognized.");
+            ModelState.AddModelError("VehicleTypeId", "Selected vehicle type is not recognized.");
         }
 
         if (string.IsNullOrWhiteSpace(vm.OwnerId))
@@ -302,26 +298,26 @@ public class AdminVehiclesController : Controller
             }
         }
 
-        vm.VehicleTypes = Enum.GetValues(typeof(VehicleType))
-            .Cast<VehicleType>()
-            .Select(v => new SelectListItem
+        vm.VehicleTypes = await _context.VehicleTypes
+            .Select(vt => new SelectListItem
             {
-                Text = v.GetDisplayName(),
-                Value = v.ToString()
-            });
+                Value = vt.Id.ToString(),
+                Text = vt.Name
+            })
+            .ToListAsync();
 
         vm.Users = await _context.Users
-        .Select(u => new SelectListItem
-        {
-            Value = u.Id,
-            Text = u.Email
-        })
-        .ToListAsync();
+            .Select(u => new SelectListItem
+            {
+                Value = u.Id,
+                Text = u.Email
+            })
+            .ToListAsync();
 
         return View(vm);
     }
 
-    // GET: MyVehicles/Delete/5
+    // GET: AdminVehicles/Delete/5
     [HttpGet]
     public async Task<IActionResult> Delete(int? id)
     {
@@ -337,7 +333,7 @@ public class AdminVehiclesController : Controller
         return View(vehicle);
     }
 
-    // POST: MyVehicles/Delete/5
+    // POST: AdminVehicles/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
@@ -356,10 +352,5 @@ public class AdminVehiclesController : Controller
     private bool VehicleExists(int? id)
     {
         return _context.Vehicles.Any(e => e.Id == id);
-    }
-
-    private async Task<VehicleTypeEntity?> GetVehicleTypeEntityAsync(VehicleType type)
-    {
-        return await _context.VehicleTypes.FirstOrDefaultAsync(vt => vt.EnumValue == type);
     }
 }

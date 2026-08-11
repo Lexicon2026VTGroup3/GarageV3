@@ -5,9 +5,9 @@
 @{
     ViewData["Title"] = "Admin Vehicle Details";
 
-    var vehicleType = Model.VehicleType;
-    var badgeColor = VehicleTypeHelper.GetBadgeColor(vehicleType);
-    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(vehicleType);
+    var vehicleTypeName = Model.VehicleTypeName;
+    var badgeColor = VehicleTypeHelper.GetBadgeColor(vehicleTypeName);
+    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(vehicleTypeName);
 }
 
 <div class="container">
@@ -55,7 +55,7 @@
                             <dd class="col-7 mb-0">@Model.NumberOfWheels</dd>
 
                             <dt class="col-5 sv-label">Assigned Spot</dt>
-                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, vehicleType)</dd>
+                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, vehicleTypeName)</dd>
 
                             <dt class="col-5 sv-label">Registered Time</dt>
                             <dd class="col-7 mb-0">@Model.ArrivalTime.ToString("yyyy-MM-dd HH:mm")</dd>
