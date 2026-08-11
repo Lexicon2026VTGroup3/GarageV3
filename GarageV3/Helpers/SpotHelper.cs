@@ -18,5 +18,21 @@ namespace GarageV3.Helpers
                 ? $"#{start} - #{end}"
                 : $"#{start}";
         }
+
+
+        public static string GetSpotDisplay(int parkingSpotId, string vehicleTypeName)
+        {
+            if (parkingSpotId <= 0)
+                return "Not assigned";
+
+            var vehicleType = VehicleTypeHelper.ToEnum(vehicleTypeName);
+            int spotSpan = VehicleSpotRequirement.GetRequiredWholeSpots(vehicleType);
+            int start = parkingSpotId;
+            int end = start + spotSpan - 1;
+
+            return spotSpan > 1
+                ? $"#{start} - #{end}"
+                : $"#{start}";
+        }
     }
 }
