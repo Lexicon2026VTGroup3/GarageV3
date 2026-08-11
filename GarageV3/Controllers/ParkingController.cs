@@ -28,6 +28,12 @@ namespace GarageV3.Controllers
             _userManager = userManager;
         }
 
+        // GET: /Parking
+        public IActionResult Index()
+        {
+            return RedirectToAction("Index", "MyVehicles");
+        }
+
         // GET: Parking/History
         [HttpGet]
         public async Task<IActionResult> History()
@@ -156,6 +162,15 @@ namespace GarageV3.Controllers
             if (session == null || session.Vehicle == null)
             {
                 return NotFound();
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
+            bool isAdmin = User.IsInRole("Admin");
+            bool isOwner = session.Vehicle.Owner?.Id == currentUserId;
+
+            if (!isAdmin && !isOwner)
+            {
+                return Forbid(); // Returns HTTP 403 Forbidden / Access Denied
             }
 
             var viewModel = new CheckOutViewModel
