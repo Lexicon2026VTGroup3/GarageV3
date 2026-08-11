@@ -1,4 +1,6 @@
-﻿namespace GarageV3.ViewModels
+﻿using GarageV3.Models.Enums;
+
+namespace GarageV3.ViewModels
 {
     public class AdminVehiclesIndexViewModel
     {
@@ -9,6 +11,8 @@
         public string Color { get; set; } = string.Empty;
         public int NumberOfWheels { get; set; }
         public DateTime ArrivalTime { get; set; }
+
+        public VehicleType VehicleType { get; set; }
 
         public string VehicleTypeName { get; set; } = string.Empty;
 
