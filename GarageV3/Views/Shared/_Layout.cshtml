@@ -47,12 +47,42 @@
                             <a class="nav-link sv-nav-link" asp-area="" asp-controller="ParkedVehicles" asp-action="Statistics">Statistics</a>
                         </li>
                         @if (User.IsInRole("Admin"))
-                        
-                            {<li class="nav-item">
-                                <a class="nav-link sv-nav-link" asp-controller="AdminVehicles" asp-action="Index">Vehicle Management</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link sv-nav-link" asp-area="" asp-controller="UserManagement" asp-action="Index">User Management</a>
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle sv-nav-link"
+                                   href="#"
+                                   id="adminDropdown"
+                                   role="button"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false">
+                                    Admin
+                                </a>
+
+                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                    <li>
+                                        <a class="dropdown-item"
+                                           asp-controller="AdminParking"
+                                           asp-action="Index">
+                                            Active Parking
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a class="dropdown-item"
+                                           asp-controller="AdminVehicles"
+                                           asp-action="Index">
+                                            Vehicle Management
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a class="dropdown-item"
+                                           asp-controller="UserManagement"
+                                           asp-action="Index">
+                                            User Management
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
                         }
                     </ul>
