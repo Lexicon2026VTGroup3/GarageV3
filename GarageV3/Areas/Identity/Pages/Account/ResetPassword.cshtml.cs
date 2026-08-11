@@ -44,6 +44,9 @@ public class ResetPasswordModel : PageModel
         [EmailAddress]
         public string Email { get; set; } = default!;
 
+        [Required]
+        public string Token { get; set; } = default!;
+
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -66,25 +69,25 @@ public class ResetPasswordModel : PageModel
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        [Required]
-        public string Code { get; set; } = default!;
+        // [Required]
+        // public string Code { get; set; } = default!;
 
     }
 
-    public IActionResult OnGet(string? code = null)
+    public IActionResult OnGet(string token, string email)
     {
-        if (code == null)
+        if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(email))
         {
-            return BadRequest("A code must be supplied for password reset.");
+            return BadRequest("A token and email must be supplied for password reset.");
         }
-        else
+
+        Input = new InputModel
         {
-            Input = new InputModel
-            {
-                Code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code))
-            };
-            return Page();
-        }
+            Token = token,
+            Email = email
+        };
+
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -101,7 +104,9 @@ public class ResetPasswordModel : PageModel
             return RedirectToPage("./ResetPasswordConfirmation");
         }
 
-        var result = await _userManager.ResetPasswordAsync(user, Input.Code, Input.Password);
+        // var result = await _userManager.ResetPasswordAsync(user, Input.Code, Input.Password);
+        var result = await _userManager.ResetPasswordAsync(user, Input.Token, Input.Password);
+
         if (result.Succeeded)
         {
             return RedirectToPage("./ResetPasswordConfirmation");

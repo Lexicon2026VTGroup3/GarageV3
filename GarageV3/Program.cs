@@ -1,11 +1,12 @@
+using GarageV3.Data;
 using GarageV3.Models.Entities;
 using GarageV3.Models.Enums;
 using GarageV3.Models.Parking;
 using GarageV3.Services;
-using GarageV3.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 using GarageV3.Services.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,9 +14,17 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+//builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+//{
+//    options.TokenLifespan = TimeSpan.FromHours(3);
+//});
+builder.Services.AddTransient<IEmailSender, DevelopmentEmailSender>();
+
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
+    options.SignIn.RequireConfirmedAccount = false;
+    options.SignIn.RequireConfirmedEmail = false;
+}).AddRoles<IdentityRole>()
+  .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
