@@ -35,7 +35,9 @@
                         <div class="alert alert-info">
                             <div class="mb-2">
                                 <strong>Checked In Time:</strong>
-                                <span>@Model.CheckInTime.ToString("dddd, yyyy-MM-dd HH:mm")</span>
+                                <span class ="local-time-display" data-utc='@Model.CheckInTime.ToString("o")'>
+                                    @Model.CheckInTime.ToString("dddd, yyyy-MM-dd HH:mm") UTC
+                                </span>
                             </div>
 
                             <div class="parked-duration">

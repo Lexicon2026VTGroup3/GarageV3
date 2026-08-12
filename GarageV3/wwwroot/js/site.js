@@ -113,3 +113,20 @@ async function updateTotalPrices() {
         cell.textContent = price + " kr";
     }));
 }
+
+// 1. Convert initial UTC time labels to user's browser local time
+document.querySelectorAll(".local-time-display").forEach(el => {
+    const utcString = el.dataset.utc;
+    if (utcString) {
+        const localDate = new Date(utcString);
+
+        el.textContent = localDate.toLocaleString([], {
+            weekday: 'long',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+});
