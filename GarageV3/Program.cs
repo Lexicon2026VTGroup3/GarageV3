@@ -149,14 +149,42 @@ void AddVehicleTypeAndParkingSpotSeedData(ApplicationDbContext context, IService
         context.SaveChanges();
     }
 
+
     if (!context.ParkingSpots.Any())
     {
         var settings = services.GetRequiredService<IOptions<GarageSettings>>().Value;
 
         var spots = Enumerable.Range(1, settings.TotalParkingSpots)
-            .Select(n => new ParkingSpot { Number = n, IsOutOfService = false });
+            .Select(n => new ParkingSpot
+            {
+                Number = n,
+                Location = $"Level {((n - 1) / 10) + 1}, Spot {((n - 1) % 10) + 1}",
+                IsOutOfService = false
+            });
 
         context.ParkingSpots.AddRange(spots);
         context.SaveChanges();
     }
+
+    else
+    {
+        // Update existing parking spots that were created before Location was added.
+        var spotsWithoutLocation = context.ParkingSpots
+            .Where(s => s.Location == null)
+            .ToList();
+
+        foreach (var spot in spotsWithoutLocation)
+        {
+            spot.Location = $"Level {((spot.Number - 1) / 10) + 1}, Spot {((spot.Number - 1) % 10) + 1}";
+        }
+
+        if (spotsWithoutLocation.Count > 0)
+        {
+            context.SaveChanges();
+        }
+    }
+
 }
+
+
+
