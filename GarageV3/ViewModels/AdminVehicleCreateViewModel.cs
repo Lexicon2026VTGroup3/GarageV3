@@ -10,5 +10,7 @@ namespace GarageV3.ViewModels
         public string OwnerId { get; set; } = string.Empty;
 
         public IEnumerable<SelectListItem>? Users { get; set; }
+
+        public bool IsParked { get; set; }
     }
 }

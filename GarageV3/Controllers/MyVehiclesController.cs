@@ -164,6 +164,9 @@ public class MyVehiclesController : Controller
 
         if (vehicle == null) return NotFound();
 
+        bool isParked = await _context.ParkingSessions
+            .AnyAsync(ps => ps.VehicleId == id && ps.CheckOutTime == null);
+
         var vm = new ParkedVehicleFormViewModel
         {
             Id = vehicle.Id,
@@ -174,6 +177,7 @@ public class MyVehiclesController : Controller
             Model = vehicle.Model,
             NumberOfWheels = vehicle.NumberOfWheels,
             ArrivalTime = vehicle.ArrivalTime,
+            IsParked = isParked,
 
             VehicleTypes = await _context.VehicleTypes
                 .Select(vt => new SelectListItem
@@ -281,6 +285,15 @@ public async Task<IActionResult> Delete(int? id)
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
         var userId = _userManager.GetUserId(User);
+
+        bool isParked = await _context.ParkingSessions
+            .AnyAsync(ps => ps.VehicleId == id && ps.CheckOutTime == null);
+
+        if (isParked)
+        {
+            TempData["ErrorMessage"] = "Cannot delete: This vehicle is currently parked in the garage.";
+            return RedirectToAction(nameof(Index));
+        }
 
         var vehicle = await _context.Vehicles
             .FirstOrDefaultAsync(v => v.Id == id && v.OwnerId == userId);

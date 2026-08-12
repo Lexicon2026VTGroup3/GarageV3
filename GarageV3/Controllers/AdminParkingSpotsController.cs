@@ -119,6 +119,21 @@ namespace GarageV3.Controllers
                 ModelState.AddModelError("Number", $"Parking spot #{viewModel.Number} already exists.");
             }
 
+            bool isOccupied = await _context.ParkingSessions
+        .AnyAsync(ps => ps.ParkingSpotId == id && ps.CheckOutTime == null);
+
+            if (isOccupied)
+            {
+                var existingEntity = await _context.ParkingSpots.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+                if (existingEntity != null)
+                {
+                    if (existingEntity.Number != viewModel.Number || existingEntity.IsOutOfService != viewModel.IsOutOfService)
+                    {
+                        ModelState.AddModelError("", "Cannot modify spot number or out-of-service status while a vehicle is parked here.");
+                    }
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 var entity = await _context.ParkingSpots.FindAsync(id);
@@ -174,6 +189,15 @@ namespace GarageV3.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            bool isOccupied = await _context.ParkingSessions
+        .AnyAsync(ps => ps.ParkingSpotId == id && ps.CheckOutTime == null);
+
+            if (isOccupied)
+            {
+                TempData["ErrorMessage"] = "Cannot delete: A vehicle is currently parked in this spot.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var entity = await _context.ParkingSpots.FindAsync(id);
             if (entity != null)
             {

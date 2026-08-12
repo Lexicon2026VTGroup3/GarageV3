@@ -212,6 +212,9 @@ public class AdminVehiclesController : Controller
 
         if (vehicle == null) return NotFound();
 
+        bool isParked = await _context.ParkingSessions
+        .AnyAsync(ps => ps.VehicleId == id && ps.CheckOutTime == null);
+
         var vm = new AdminVehicleCreateViewModel
         {
             Id = vehicle.Id,
@@ -223,6 +226,7 @@ public class AdminVehiclesController : Controller
             NumberOfWheels = vehicle.NumberOfWheels,
             ArrivalTime = vehicle.ArrivalTime,
             OwnerId = vehicle.OwnerId,
+            IsParked = isParked,
 
             Users = await _context.Users
                 .Select(u => new SelectListItem
@@ -303,7 +307,18 @@ public class AdminVehiclesController : Controller
                 _context.Update(original);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = $"Successfully updated vehicle {vm.RegistrationNumber}.";
+                bool isParked = await _context.ParkingSessions
+                    .AnyAsync(ps => ps.VehicleId == id && ps.CheckOutTime == null);
+
+                if (isParked)
+                {
+                    TempData["WarningMessage"] = $"Vehicle {vm.RegistrationNumber} was updated, but please note it is currently parked in the garage.";
+                }
+                else
+                {
+                    TempData["SuccessMessage"] = $"Successfully updated vehicle {vm.RegistrationNumber}.";
+                }
+
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -371,6 +386,15 @@ public class AdminVehiclesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
+        bool isParked = await _context.ParkingSessions
+            .AnyAsync(ps => ps.VehicleId == id && ps.CheckOutTime == null);
+
+        if (isParked)
+        {
+            TempData["ErrorMessage"] = "Cannot delete: This vehicle is currently parked in the garage.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var vehicle = await _context.Vehicles.FindAsync(id);
         if (vehicle != null)
         {
