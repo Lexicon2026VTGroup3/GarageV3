@@ -45,16 +45,13 @@ namespace GarageV3.Controllers
             }
 
             var historySessions = await _context.ParkingSessions
-                .Include(ps => ps.Vehicle)
-                    .ThenInclude(v => v.VehicleTypeRef)
-                .Include(ps => ps.ParkingSpot)
                 .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
                 .OrderByDescending(ps => ps.CheckOutTime)
                 .Select(ps => new ParkingHistoryViewModel
                 {
                     SessionId = ps.Id,
                     RegistrationNumber = (ps.Vehicle != null && ps.Vehicle.RegistrationNumber != null) ? ps.Vehicle.RegistrationNumber : string.Empty,
-                    VehicleTypeName = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.EnumValue.ToString() : "Unknown",
+                    VehicleTypeName = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.Name : "Unknown",
                     ParkingSpotId = (ps.ParkingSpot != null) ? ps.ParkingSpot.Id : -1,
                     ArrivalTime = ps.ArriveTime,
                     CheckOutTime = (ps.CheckOutTime != null) ? ps.CheckOutTime.Value : DateTime.MinValue,
@@ -185,7 +182,7 @@ namespace GarageV3.Controllers
                 Color = session.Vehicle.Color,
                 NumberOfWheels = session.Vehicle.NumberOfWheels,
                 VehicleType = session.Vehicle.VehicleTypeRef,
-                VehicleTypeName = session.Vehicle.VehicleTypeRef?.EnumValue.GetDisplayName() ?? "Unknown",
+                VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
                 ParkingSpotId = session.ParkingSpot?.Id ?? -1,
                 CheckInTime = session.ArriveTime,
                 HourlyRateAtCheckIn = session.HourlyRateAtCheckIn
@@ -210,7 +207,7 @@ namespace GarageV3.Controllers
             var receiptViewModel = new ReceiptViewModel
             {
                 OwnerEmail = session.Vehicle.Owner?.Email ?? "No Owner",
-                VehicleType = session.Vehicle.VehicleTypeRef?.EnumValue ?? default,
+                VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
                 RegistrationNumber = session.Vehicle.RegistrationNumber,
                 Brand = session.Vehicle.Brand,
                 Model = session.Vehicle.Model,

@@ -1,7 +1,5 @@
-
 using GarageV3.Data;
 using GarageV3.Models.Entities;
-using GarageV3.Models.Enums;
 using GarageV3.Services.Interfaces;
 using GarageV3.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -18,17 +16,16 @@ public class MyVehiclesController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
 
     public MyVehiclesController(
-    ApplicationDbContext context,
-    IVehicleHandler vehicleHandler,
-    UserManager<ApplicationUser> userManager)
+        ApplicationDbContext context,
+        IVehicleHandler vehicleHandler,
+        UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _vehicleHandler = vehicleHandler;
         _userManager = userManager;
     }
 
-    // GET: VEHICLES
-    public async Task<IActionResult> Index()    
+    public async Task<IActionResult> Index()
     {
         var userId = _userManager.GetUserId(User);
 
@@ -44,21 +41,18 @@ public class MyVehiclesController : Controller
                 Color = v.Color,
                 NumberOfWheels = v.NumberOfWheels,
                 ArrivalTime = v.ArrivalTime,
-                VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : string.Empty,
-                AssignedSpotNumber = v.AssignedSpotNumber
+                VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
+                VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
+                ParkingSpotId = v.AssignedSpotNumber
             })
             .ToListAsync();
 
         return View(vehicles);
     }
 
-    // GET: MyVehicles/Details/5
     public async Task<IActionResult> Details(int? id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
+        if (id == null) return NotFound();
 
         var userId = _userManager.GetUserId(User);
 
@@ -67,45 +61,38 @@ public class MyVehiclesController : Controller
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.Id == id && m.OwnerId == userId);
 
-        if (vehicle == null)
-        {
-            return NotFound();
-        }
+        if (vehicle == null) return NotFound();
 
         return View(vehicle);
     }
 
-    // GET: VEHICLES/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
         var viewModel = new ParkedVehicleFormViewModel
         {
-            VehicleTypes = Enum.GetValues(typeof(VehicleType))
-                              .Cast<VehicleType>()
-                              .Select(t => new SelectListItem
-                              {
-                                  Value = t.ToString(),
-                                  Text = t.ToString()
-                              })
+            VehicleTypes = await _context.VehicleTypes
+                .Select(vt => new SelectListItem
+                {
+                    Value = vt.Id.ToString(),
+                    Text = vt.Icon + " " + vt.Name
+                })
+                .ToListAsync()
         };
         return View(viewModel);
     }
 
-    // POST: VEHICLES/Create
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ParkedVehicleFormViewModel viewModel)
     {
         viewModel.RegistrationNumber = viewModel.RegistrationNumber.Trim().ToUpper();
 
-        var vehicleTypeEntity = await _context.VehicleTypes
-            .FirstOrDefaultAsync(vt => vt.EnumValue == viewModel.VehicleType);
+        int.TryParse(viewModel.VehicleTypeId, out int typeId);
+        var vehicleTypeEntity = await _context.VehicleTypes.FindAsync(typeId);
 
         if (vehicleTypeEntity == null)
         {
-            ModelState.AddModelError("VehicleType", "Selected vehicle type is not recognized.");
+            ModelState.AddModelError("VehicleTypeId", "Selected vehicle type is not recognized.");
         }
 
         var userId = _userManager.GetUserId(User);
@@ -138,29 +125,25 @@ public class MyVehiclesController : Controller
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, "Could not register vehicle. Please check all fields.");
+                ModelState.AddModelError(string.Empty, "Could not register vehicle.");
                 Console.WriteLine("DB ERROR: " + ex.Message);
             }
         }
 
-        viewModel.VehicleTypes = Enum.GetValues(typeof(VehicleType))
-            .Cast<VehicleType>()
-            .Select(v => new SelectListItem
+        viewModel.VehicleTypes = await _context.VehicleTypes
+            .Select(vt => new SelectListItem
             {
-                Text = v.ToString(),
-                Value = v.ToString()
-            });
+                Value = vt.Id.ToString(),
+                Text = vt.Icon + " " + vt.Name
+            })
+            .ToListAsync();
 
         return View(viewModel);
     }
 
-    // GET: MyVehicles/Edit/5
     public async Task<IActionResult> Edit(int? id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
+        if (id == null) return NotFound();
 
         var userId = _userManager.GetUserId(User);
 
@@ -168,70 +151,60 @@ public class MyVehiclesController : Controller
             .Include(v => v.VehicleTypeRef)
             .FirstOrDefaultAsync(v => v.Id == id && v.OwnerId == userId);
 
-        if (vehicle == null)
-        {
-            return NotFound();
-        }
+        if (vehicle == null) return NotFound();
 
         var vm = new ParkedVehicleFormViewModel
         {
             Id = vehicle.Id,
             RegistrationNumber = vehicle.RegistrationNumber,
-            VehicleType = vehicle.VehicleTypeRef!.EnumValue,
+            VehicleTypeId = vehicle.VehicleTypeRefId.ToString(),
             Color = vehicle.Color,
             Brand = vehicle.Brand,
             Model = vehicle.Model,
             NumberOfWheels = vehicle.NumberOfWheels,
             ArrivalTime = vehicle.ArrivalTime,
 
-            VehicleTypes = Enum.GetValues(typeof(VehicleType))
-                .Cast<VehicleType>()
-                .Select(v => new SelectListItem
+            VehicleTypes = await _context.VehicleTypes
+                .Select(vt => new SelectListItem
                 {
-                    Text = v.GetDisplayName(),
-                    Value = v.ToString()
+                    Value = vt.Id.ToString(),
+                    Text = vt.Icon + " " + vt.Name
                 })
+                .ToListAsync()
         };
 
         return View(vm);
     }
 
-    // POST: MyVehicles/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int? id, ParkedVehicleFormViewModel vm)
     {
-        if (id != vm.Id)
-        {
-            return NotFound();
-        }
+        if (id != vm.Id) return NotFound();
 
         vm.RegistrationNumber = vm.RegistrationNumber.Trim().ToUpper();
-
         var userId = _userManager.GetUserId(User);
 
         var original = await _context.Vehicles
             .Include(v => v.VehicleTypeRef)
             .FirstOrDefaultAsync(v => v.Id == id && v.OwnerId == userId);
 
-        if (original == null)
-        {
-            return NotFound();
-        }
+        if (original == null) return NotFound();
 
         if (original.RegistrationNumber != vm.RegistrationNumber)
         {
-            bool regExists = await _vehicleHandler.IsExistingAsync(vm.RegistrationNumber, id);
-            if (regExists)
+            if (await _vehicleHandler.IsExistingAsync(vm.RegistrationNumber, id))
             {
-                ModelState.AddModelError("RegistrationNumber", "The registration number already exists. Please enter a different one.");
+                ModelState.AddModelError("RegistrationNumber", "Registration number already exists.");
             }
         }
 
-        var vehicleTypeEntity = await GetVehicleTypeEntityAsync(vm.VehicleType);
+        int.TryParse(vm.VehicleTypeId, out int typeId);
+        var vehicleTypeEntity = await _context.VehicleTypes.FindAsync(typeId);
+
         if (vehicleTypeEntity == null)
         {
-            ModelState.AddModelError("VehicleType", "Selected vehicle type is not recognized.");
+            ModelState.AddModelError("VehicleTypeId", "Vehicle type not recognized.");
         }
 
         if (ModelState.IsValid)
@@ -248,29 +221,28 @@ public class MyVehiclesController : Controller
                 _context.Update(original);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = $"Successfully updated vehicle {vm.RegistrationNumber}.";
+                TempData["SuccessMessage"] = $"Successfully updated {vm.RegistrationNumber}.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, "Could not save changes. Please check all fields.");
-                Console.WriteLine("DB ERROR: " + ex.Message);
+                ModelState.AddModelError(string.Empty, "Could not save changes.");
             }
         }
 
-        vm.VehicleTypes = Enum.GetValues(typeof(VehicleType))
-            .Cast<VehicleType>()
-            .Select(v => new SelectListItem
+        vm.VehicleTypes = await _context.VehicleTypes
+            .Select(vt => new SelectListItem
             {
-                Text = v.GetDisplayName(),
-                Value = v.ToString()
-            });
+                Value = vt.Id.ToString(),
+                Text = vt.Icon + " " + vt.Name
+            })
+            .ToListAsync();
 
         return View(vm);
     }
 
-    // GET: MyVehicles/Delete/5
-    public async Task<IActionResult> Delete(int? id)
+// GET: MyVehicles/Delete/5
+public async Task<IActionResult> Delete(int? id)
     {
         if (id == null)
         {
@@ -318,10 +290,5 @@ public class MyVehiclesController : Controller
     private bool VehicleExists(int? id)
     {
         return _context.Vehicles.Any(e => e.Id == id);
-    }
-
-    private async Task<VehicleTypeEntity?> GetVehicleTypeEntityAsync(VehicleType type)
-    {
-        return await _context.VehicleTypes.FirstOrDefaultAsync(vt => vt.EnumValue == type);
     }
 }

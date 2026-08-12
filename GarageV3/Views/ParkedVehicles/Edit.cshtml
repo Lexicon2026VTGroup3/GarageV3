@@ -45,8 +45,8 @@
                             <div class="form-group mb-3">
                                 <label asp-for="AssignedSpotNumber" class="control-label"></label>
                                 <input class="form-control readonly-plain" readonly
-                                    value="@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, Model.VehicleType)" 
-                                />
+                                       value="@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, Model.VehicleTypeName)"                    
+                                       />
                             </div>
 
                             <div class="form-group mt-4 d-flex gap-4">

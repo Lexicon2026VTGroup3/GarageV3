@@ -39,14 +39,17 @@ namespace GarageV3.ViewModels
         [Display(Name = "Number of Wheels")]
         public int? NumberOfWheels { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Vehicle type is required.")]
         [Display(Name = "Vehicle Type")]
-        public VehicleType VehicleType { get; set; }
+        public string VehicleTypeId { get; set; } = string.Empty;
 
         [BindNever]
         public IEnumerable<SelectListItem>? VehicleTypes { get; set; }
 
         [Display(Name = "Parking Spot")]
         public int? AssignedSpotNumber { get; set; }
+
+        public string VehicleTypeName { get; set; } = string.Empty;
+
     }
 }
