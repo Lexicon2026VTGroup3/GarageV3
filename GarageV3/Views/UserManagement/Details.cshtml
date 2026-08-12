@@ -1,0 +1,90 @@
+﻿@model GarageV3.ViewModels.UserManagement.MemberDetailsViewModel
+
+@{
+    ViewData["Title"] = "Member Details";
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Member Details</h1>
+
+        <a asp-action="Members" class="btn btn-secondary">
+            Back to Members
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Member Information</h4>
+        </div>
+
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Full Name</dt>
+                <dd class="col-sm-9">@Model.FullName</dd>
+
+                <dt class="col-sm-3">Username</dt>
+                <dd class="col-sm-9">@Model.UserName</dd>
+
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">@Model.Email</dd>
+
+                <dt class="col-sm-3">Personal Identity Number</dt>
+                <dd class="col-sm-9">@Model.PersonalIdentityNumber</dd>
+
+                <dt class="col-sm-3">Registered Vehicles</dt>
+                <dd class="col-sm-9">@Model.Vehicles.Count</dd>
+            </dl>
+        </div>
+    </div>
+
+    <h2 class="mb-3">Registered Vehicles</h2>
+
+    @if (!Model.Vehicles.Any())
+    {
+        <div class="alert alert-info">
+            This member has no registered vehicles.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Registration Number</th>
+                        <th>Vehicle Type</th>
+                        <th>Brand</th>
+                        <th>Model</th>
+                        <th>Color</th>
+                        <th>Wheels</th>
+                        <th>Arrival Time</th>
+                        <th>Parking Spot</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var vehicle in Model.Vehicles)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@vehicle.RegistrationNumber</strong>
+                            </td>
+                            <td>@vehicle.VehicleTypeName</td>
+                            <td>@vehicle.Brand</td>
+                            <td>@vehicle.Model</td>
+                            <td>@vehicle.Color</td>
+                            <td>@vehicle.NumberOfWheels</td>
+                            <td>@vehicle.ArrivalTime.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                @(vehicle.ParkingSpotNumber.HasValue
+                                    ? $"#{vehicle.ParkingSpotNumber}"
+                                    : "Not parked")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
