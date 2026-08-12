@@ -165,6 +165,7 @@ void AddVehicleTypeAndParkingSpotSeedData(ApplicationDbContext context, IService
         context.ParkingSpots.AddRange(spots);
         context.SaveChanges();
     }
+
     else
     {
         // Update existing parking spots that were created before Location was added.
@@ -184,3 +185,6 @@ void AddVehicleTypeAndParkingSpotSeedData(ApplicationDbContext context, IService
     }
 
 }
+
+
+
