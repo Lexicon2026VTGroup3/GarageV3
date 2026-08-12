@@ -210,9 +210,9 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td><span>@Html.DisplayFor(modelItem => item.VehicleTypeName)</span></td>
+                            <td><span>@Html.DisplayFor(modelItem => item.VehicleTypeDisplay)</span></td>
                             <td><strong>@Html.DisplayFor(modelItem => item.RegistrationNumber)</strong></td>
-                            <td>@SpotHelper.GetSpotDisplay(item.ParkingSpotId, item.VehicleTypeName)</td>
+                            <td>@SpotHelper.GetSpotDisplay(item.ParkingSpotId, item.RequiredSpots)</td>
                             <td class="local-time-display" data-utc='@item.ArrivalTime.ToString("o")'>
                                 @item.ArrivalTime.ToString("ddd, dd MMM yyyy, HH:mm")
                             </td>
