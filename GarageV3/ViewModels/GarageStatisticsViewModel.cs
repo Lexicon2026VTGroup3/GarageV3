@@ -1,28 +1,20 @@
-﻿using GarageV3.Models.Enums;
-
-namespace GarageV3.ViewModels
+﻿namespace GarageV3.ViewModels
 {
     public class GarageStatisticsViewModel
     {
-        public int TotalVehicles { get; set; }
-
-        public int TotalWheels { get; set; }
+        public int FreeSpots { get; set; }
+        public int OccupiedSpots { get; set; }
+        public int OutOfServiceSpots { get; set; }
 
         /// <summary>
-        /// What the currently parked vehicles have generated in fees so far,
-        /// calculated as if each checked out right now.
+        /// Number of currently active vehicles, grouped by vehicle type name.
         /// </summary>
-        public decimal EstimatedCurrentRevenue { get; set; }
+        public List<VehicleTypeCount> ActiveVehiclesByType { get; set; } = new();
+    }
 
-        public IReadOnlyDictionary<VehicleType, int> VehicleCountsByType { get; set; }
-            = new Dictionary<VehicleType, int>();
-
-        public VehicleType? MostCommonType { get; set; }
-
-        public TimeSpan AverageParkedDuration { get; set; }
-
-        public DateTime? LongestParkedArrivalTime { get; set; }
-
-        public string? LongestParkedRegistrationNumber { get; set; }
+    public class VehicleTypeCount
+    {
+        public string TypeName { get; set; } = string.Empty;
+        public int Count { get; set; }
     }
 }

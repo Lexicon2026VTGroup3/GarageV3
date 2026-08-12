@@ -36,6 +36,7 @@ builder.Services.Configure<GarageSettings>(
     builder.Configuration.GetSection(GarageSettings.SectionName));
 builder.Services.AddScoped<IParkingSpotService, ParkingSpotService>();
 builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
+builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 
 var app = builder.Build();
 
@@ -185,6 +186,3 @@ void AddVehicleTypeAndParkingSpotSeedData(ApplicationDbContext context, IService
     }
 
 }
-
-
-

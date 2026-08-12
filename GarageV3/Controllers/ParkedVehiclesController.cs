@@ -175,43 +175,6 @@ public class ParkedVehiclesController : Controller
         return View(viewModel);
     }
 
-    // GET: PARKEDVEHICLES/Statistics
-    public async Task<IActionResult> Statistics()
-    {
-        var vehicles = await _context.Vehicles
-            .Include(v => v.VehicleTypeRef)
-            .AsNoTracking()
-            .ToListAsync();
-
-        var now = DateTime.Now;
-
-        var viewModel = new GarageStatisticsViewModel
-        {
-            TotalVehicles = vehicles.Count,
-            TotalWheels = vehicles.Sum(v => v.NumberOfWheels),
-            EstimatedCurrentRevenue = vehicles.Sum(v => _garageFeeService.CalculateFee(v.ArrivalTime, now)),
-            VehicleCountsByType = vehicles
-                .GroupBy(v => v.VehicleTypeRef!.EnumValue)
-                .ToDictionary(g => g.Key, g => g.Count()),
-            AverageParkedDuration = vehicles.Any()
-                ? TimeSpan.FromMinutes(vehicles.Average(v => (now - v.ArrivalTime).TotalMinutes))
-                : TimeSpan.Zero
-        };
-
-        viewModel.MostCommonType = viewModel.VehicleCountsByType.Any()
-            ? viewModel.VehicleCountsByType.OrderByDescending(kvp => kvp.Value).First().Key
-            : null;
-
-        var longestParked = vehicles.OrderBy(v => v.ArrivalTime).FirstOrDefault();
-        if (longestParked != null)
-        {
-            viewModel.LongestParkedArrivalTime = longestParked.ArrivalTime;
-            viewModel.LongestParkedRegistrationNumber = longestParked.RegistrationNumber;
-        }
-
-        return View(viewModel);
-    }
-
     // GET: PARKEDVEHICLES/Details/5
     public async Task<IActionResult> Details(int? id)
     {
