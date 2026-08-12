@@ -1,15 +1,11 @@
-﻿using GarageV3.Models.Entities;
-using GarageV3.Models.Enums;
-using VehicleType = GarageV3.Models.Enums.VehicleType;
-
-namespace GarageV3.ViewModels.Parking
+﻿namespace GarageV3.ViewModels.Parking
 {
     // ViewModel used to display a parking receipt after a vehicle is checked out.
     public class ReceiptViewModel
     {
         public string OwnerEmail { get; set; } = string.Empty;
 
-        public VehicleType VehicleType { get; set; }
+        public string VehicleTypeName { get; set; } = string.Empty;
 
         public string RegistrationNumber { get; set; } = string.Empty;
 
@@ -26,7 +22,6 @@ namespace GarageV3.ViewModels.Parking
 
         public DateTime CheckOutTime { get; set; }
 
-        //public TimeSpan ParkingDuration { get; set; }
         public TimeSpan ParkingDuration => CheckOutTime - ArrivalTime;
 
         public decimal HourlyRateAtCheckIn { get; set; }

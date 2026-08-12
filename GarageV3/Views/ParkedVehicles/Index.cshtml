@@ -183,22 +183,24 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr>
-                            <td><span>@Html.DisplayFor(modelItem => item.VehicleType)</span></td>
-                            <td><strong>@Html.DisplayFor(modelItem => item.RegistrationNumber)</strong></td>
-                            <td>@SpotHelper.GetSpotDisplay(item.AssignedSpotNumber, item.VehicleType)</td>
-                            <td>@item.ArrivalTime.ToString("ddd, dd MMM yyyy, HH:mm")</td>
-                            <td data-arrival-time='@item.ArrivalTime.ToString("yyyy-MM-ddTHH:mm:ss")' class="duration-cell"></td>
-                            <td class="text-end">
-                                <a asp-action="Details" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Details</a>
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Update</a>
-                                <a asp-action="CheckOut" asp-route-id="@item.Id" class="btn btn-outline-danger sv-action-btn w-sm-auto">Check Out</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td><span>@item.VehicleTypeName</span></td>
+            <td><strong>@Html.DisplayFor(modelItem => item.RegistrationNumber)</strong></td>
+
+            <td>@SpotHelper.GetSpotDisplay(item.AssignedSpotNumber, item.VehicleTypeName)</td>
+
+            <td>@item.ArrivalTime.ToString("ddd, dd MMM yyyy, HH:mm")</td>
+            <td data-arrival-time='@item.ArrivalTime.ToString("yyyy-MM-ddTHH:mm:ss")' class="duration-cell"></td>
+            <td class="text-end">
+                <a asp-action="Details" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Details</a>
+                <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Update</a>
+                <a asp-action="CheckOut" asp-route-id="@item.Id" class="btn btn-outline-danger sv-action-btn w-sm-auto">Check Out</a>
+            </td>
+        </tr>
+    }
+</tbody>
             </table>
         </div>
     }

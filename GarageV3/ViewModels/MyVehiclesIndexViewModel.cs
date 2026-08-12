@@ -11,7 +11,13 @@
         public DateTime ArrivalTime { get; set; }
 
         public string VehicleTypeName { get; set; } = string.Empty;
+        public string VehicleTypeIcon { get; set; } = string.Empty;
+        public string BadgeColor { get; set; } = string.Empty;
+        public string BadgeTextColor { get; set; } = string.Empty;
+        public int RequiredSpots { get; set; }
 
-        public int? AssignedSpotNumber { get; set; }
+        public int? ParkingSpotId { get; set; }
+
+        public string DisplayVehicleType => $"{VehicleTypeIcon} {VehicleTypeName}";
     }
 }

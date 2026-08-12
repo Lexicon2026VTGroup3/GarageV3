@@ -1,0 +1,53 @@
+﻿@model GarageV3.ViewModels.AdminVehicleTypeViewModel
+
+@{
+    ViewData["Title"] = "Delete Vehicle Type";
+}
+
+<div class="container mt-5">
+    <div class="col-md-6 mx-auto">
+        <div class="garage-header">
+            <h3 class="text-danger">Delete Vehicle Type</h3>
+        </div>
+
+        <div class="card sv-card p-4 shadow-sm">
+            <div class="sv-flag-bar"></div>
+
+            <dl class="row my-3">
+                <dt class="col-sm-4 sv-label">Name</dt>
+                <dd class="col-sm-8"><strong>@Model.Name</strong></dd>
+
+                <dt class="col-sm-4 sv-label">Short Name</dt>
+                <dd class="col-sm-8"><span class="text-muted">@Model.ShortName</span></dd>
+
+                <dt class="col-sm-4 sv-label">Icon</dt>
+                <dd class="col-sm-8"><strong>@Model.Icon</strong></dd>
+
+                <dt class="col-sm-4 sv-label">Badge Color</dt>
+                <dd class="col-sm-8"><strong>@Model.BadgeColor</strong></dd>
+
+                <dt class="col-sm-4 sv-label">Badge Text Color</dt>
+                <dd class="col-sm-8"><strong>@Model.BadgeTextColor</strong></dd>
+
+                <dt class="col-sm-4 sv-label">Required Spots</dt>
+                <dd class="col-sm-8"><span class="text-muted">@Model.RequiredSpots</span></dd>
+
+                <dt class="col-sm-4 sv-label">Max Per Spot</dt>
+                <dd class="col-sm-8"><span class="text-muted">@Model.MaxVehiclesPerSpot</span></dd>
+            </dl>
+
+            <hr class="my-3" />
+
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+
+                <h4 class="garage-header text-danger mb-4">Are you sure you want to delete this vehicle type?</h4>
+
+                <div class="d-flex gap-4">
+                    <button type="submit" class="btn btn-danger w-50">Delete</button>
+                    <a asp-action="Index" class="btn btn-secondary w-50">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

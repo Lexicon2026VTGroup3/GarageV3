@@ -1,6 +1,4 @@
-﻿using GarageV3.Models.Enums;
-
-namespace GarageV3.ViewModels
+﻿namespace GarageV3.ViewModels
 {
     public class GarageStatisticsViewModel
     {
@@ -14,10 +12,10 @@ namespace GarageV3.ViewModels
         /// </summary>
         public decimal EstimatedCurrentRevenue { get; set; }
 
-        public IReadOnlyDictionary<VehicleType, int> VehicleCountsByType { get; set; }
-            = new Dictionary<VehicleType, int>();
+        public IReadOnlyDictionary<string, int> VehicleCountsByType { get; set; }
+            = new Dictionary<string, int>();
 
-        public VehicleType? MostCommonType { get; set; }
+        public string? MostCommonType { get; set; }
 
         public TimeSpan AverageParkedDuration { get; set; }
 

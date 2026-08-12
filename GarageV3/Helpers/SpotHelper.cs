@@ -1,16 +1,16 @@
 using GarageV3.Models.Parking;
-using GarageV3.Models.Enums;
 
 namespace GarageV3.Helpers
 {
     public static class SpotHelper
     {
-        public static string GetSpotDisplay(int? assignedSpotNumber, VehicleType vehicleType)
+        // ToDo: Delete after delete VehicleType Enum
+        public static string GetSpotDisplay(int? assignedSpotNumber, string vehicleTypeName)
         {
             if (!assignedSpotNumber.HasValue)
                 return "Not assigned";
 
-            int spotSpan = VehicleSpotRequirement.GetRequiredWholeSpots(vehicleType);
+            int spotSpan = VehicleSpotRequirement.GetRequiredWholeSpots(vehicleTypeName);
             int start = assignedSpotNumber.Value;
             int end = start + spotSpan - 1;
 
@@ -19,18 +19,15 @@ namespace GarageV3.Helpers
                 : $"#{start}";
         }
 
-
-        public static string GetSpotDisplay(int parkingSpotId, string vehicleTypeName)
+        public static string GetSpotDisplay(int? assignedSpotNumber, int requiredSpots)
         {
-            if (parkingSpotId <= 0)
+            if (!assignedSpotNumber.HasValue)
                 return "Not assigned";
 
-            var vehicleType = VehicleTypeHelper.ToEnum(vehicleTypeName);
-            int spotSpan = VehicleSpotRequirement.GetRequiredWholeSpots(vehicleType);
-            int start = parkingSpotId;
-            int end = start + spotSpan - 1;
+            int start = assignedSpotNumber.Value;
+            int end = start + requiredSpots - 1;
 
-            return spotSpan > 1
+            return requiredSpots > 1
                 ? $"#{start} - #{end}"
                 : $"#{start}";
         }

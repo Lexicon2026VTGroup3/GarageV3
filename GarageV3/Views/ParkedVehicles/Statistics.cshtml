@@ -52,7 +52,7 @@
                     @foreach (var kvp in Model.VehicleCountsByType.OrderByDescending(kvp => kvp.Value))
                     {
                         <tr>
-                            <td>@kvp.Key.GetDisplayName()</td>
+                            <td>@kvp.Key</td>
                             <td class="text-end">@kvp.Value</td>
                         </tr>
                     }
@@ -63,10 +63,10 @@
         <div class="col-md-6">
             <h5 class="sv-header">Other Facts</h5>
             <ul class="list-group">
-                @if (Model.MostCommonType.HasValue)
+                @if (!string.IsNullOrEmpty(Model.MostCommonType))
                 {
                     <li class="list-group-item">
-                        Most common vehicle type: <strong>@Model.MostCommonType.Value.GetDisplayName()</strong>
+                        Most common vehicle type: <strong>@Model.MostCommonType</strong>
                     </li>
                 }
                 @if (Model.LongestParkedRegistrationNumber != null)

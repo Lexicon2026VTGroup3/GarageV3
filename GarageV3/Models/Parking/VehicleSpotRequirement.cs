@@ -1,6 +1,4 @@
-﻿using GarageV3.Models.Enums;
-
-namespace GarageV3.Models.Parking
+﻿namespace GarageV3.Models.Parking
 {
     /// <summary>
     /// Defines how many parking spots each vehicle type requires,
@@ -16,31 +14,31 @@ namespace GarageV3.Models.Parking
         public const int BicycleSlotsPerSpot = 5;
 
         /// <summary>
-        /// Returns how many whole, contiguous spots a vehicle type requires.
-        /// Returns 0 for motorcycles, since they use fractional spots instead.
+        /// Returns how many whole, contiguous spots a vehicle type requires based on its name.
+        /// Returns 0 for motorcycles and bicycles, since they use fractional spots instead.
         /// </summary>
-        public static int GetRequiredWholeSpots(VehicleType type)
+        public static int GetRequiredWholeSpots(string vehicleTypeName)
         {
-            return type switch
+            return vehicleTypeName?.ToLower() switch
             {
-                VehicleType.Truck => 2,
-                VehicleType.Bus => 2,
-                VehicleType.Airplane => 3,
-                VehicleType.Boat => 3,
-                VehicleType.Motorcycle => 0,
-                VehicleType.Bicycle => 0,
-                _ => 1 // Car
+                "truck" => 2,
+                "bus" => 2,
+                "airplane" => 3,
+                "boat" => 3,
+                "motorcycle" => 0,
+                "bicycle" => 0,
+                _ => 1 // Car / Default
             };
         }
 
-        public static bool IsMotorcycleType(VehicleType type)
+        public static bool IsMotorcycleType(string vehicleTypeName)
         {
-            return type == VehicleType.Motorcycle;
+            return string.Equals(vehicleTypeName, "Motorcycle", StringComparison.OrdinalIgnoreCase);
         }
 
-        public static bool IsBicycleType(VehicleType type)
+        public static bool IsBicycleType(string vehicleTypeName)
         {
-            return type == VehicleType.Bicycle;
+            return string.Equals(vehicleTypeName, "Bicycle", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
