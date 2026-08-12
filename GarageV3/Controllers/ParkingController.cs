@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using static System.Collections.Specialized.BitVector32;
 
 namespace GarageV3.Controllers
 {
@@ -52,9 +53,9 @@ namespace GarageV3.Controllers
             var historySessions = await _context.ParkingSessions
                 .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
                 .Include(ps => ps.Vehicle)
-                    .ThenInclude(v => v.VehicleTypeRef)
+                    .ThenInclude(v => v!.VehicleTypeRef)
                 .Include(ps => ps.ParkingSpot)
-                .OrderByDescending(ps => ps.CheckOutTime)
+                .OrderByDescending(ps => ps.ArriveTime)
                 .Select(ps => new ParkingHistoryViewModel
                 {
                     SessionId = ps.Id,
@@ -72,6 +73,58 @@ namespace GarageV3.Controllers
             return View(historySessions);
         }
 
+        // GET: Parking/PrintReceipt
+        [HttpGet]
+        public async Task<IActionResult> PrintReceipt(int id)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Challenge();
+            }
+
+            var session = await _context.ParkingSessions
+                .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null)
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v!.Owner)
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v!.VehicleTypeRef)
+                .Include(ps => ps.ParkingSpot)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(ps => ps.Id == id);
+
+            if (session == null || session.Vehicle == null)
+            {
+                TempData["ErrorMessage"] = "Unable to print receipt. The parking session was not found or is not checked out yet.";
+                return RedirectToAction(nameof(History));
+            }
+            if (session.Vehicle.Owner == null || session.Vehicle.Owner.Id != currentUser.Id)
+            {
+                TempData["ErrorMessage"] = "You are not allowed to print others' receipt.";
+                return RedirectToAction(nameof(History));
+            }
+
+            var receiptViewModel = new ReceiptViewModel
+            {
+                OwnerEmail = session.Vehicle.Owner?.Email ?? "No Owner",
+                VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
+                RegistrationNumber = session.Vehicle.RegistrationNumber,
+                Brand = session.Vehicle.Brand,
+                Model = session.Vehicle.Model,
+                Color = session.Vehicle.Color,
+                NumberOfWheels = session.Vehicle.NumberOfWheels,
+                ParkingSpotId = session.ParkingSpot?.Id ?? -1,
+                ArrivalTime = session.ArriveTime,
+                CheckOutTime = session.CheckOutTime ?? DateTime.UtcNow,
+                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
+                TotalPrice = session.TotalPrice ?? 0,
+                AppliedDiscountPercentage = session.AppliedDiscountPercentage
+            };
+
+            TempData["Receipt"] = JsonSerializer.Serialize(receiptViewModel);
+
+            return RedirectToAction(nameof(Receipt), new { id });
+        }
 
         // GET: Parking/Park
         public async Task<IActionResult> Park()
@@ -155,6 +208,12 @@ namespace GarageV3.Controllers
         // GET: Parking/CheckOut/5
         public async Task<IActionResult> CheckOut(int id)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Challenge();
+            }
+
             var session = await _context.ParkingSessions
                 .Where(ps => ps.CheckOutTime == null && ps.Vehicle != null)
                 .Include(ps => ps.Vehicle)
@@ -171,11 +230,6 @@ namespace GarageV3.Controllers
                 return RedirectToAction("Index", "MyVehicles");
             }
 
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-            {
-                return Challenge();
-            }
             var currentUserId = currentUser.Id;
             bool isAdmin = User.IsInRole("Admin");
             bool isOwner = session.Vehicle.Owner?.Id == currentUserId;
