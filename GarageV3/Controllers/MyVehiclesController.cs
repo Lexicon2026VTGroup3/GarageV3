@@ -41,8 +41,9 @@ public class MyVehiclesController : Controller
                 Color = v.Color,
                 NumberOfWheels = v.NumberOfWheels,
                 ArrivalTime = v.ArrivalTime,
-                VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : string.Empty,
-                AssignedSpotNumber = v.AssignedSpotNumber
+                VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
+                VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
+                ParkingSpotId = v.AssignedSpotNumber
             })
             .ToListAsync();
 
@@ -73,7 +74,7 @@ public class MyVehiclesController : Controller
                 .Select(vt => new SelectListItem
                 {
                     Value = vt.Id.ToString(),
-                    Text = vt.Name
+                    Text = vt.Icon + " " + vt.Name
                 })
                 .ToListAsync()
         };
@@ -133,7 +134,7 @@ public class MyVehiclesController : Controller
             .Select(vt => new SelectListItem
             {
                 Value = vt.Id.ToString(),
-                Text = vt.Name
+                Text = vt.Icon + " " + vt.Name
             })
             .ToListAsync();
 
@@ -167,7 +168,7 @@ public class MyVehiclesController : Controller
                 .Select(vt => new SelectListItem
                 {
                     Value = vt.Id.ToString(),
-                    Text = vt.Name
+                    Text = vt.Icon + " " + vt.Name
                 })
                 .ToListAsync()
         };
@@ -233,7 +234,7 @@ public class MyVehiclesController : Controller
             .Select(vt => new SelectListItem
             {
                 Value = vt.Id.ToString(),
-                Text = vt.Name
+                Text = vt.Icon + " " + vt.Name
             })
             .ToListAsync();
 

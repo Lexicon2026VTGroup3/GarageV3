@@ -5,13 +5,13 @@
 @{
     ViewData["Title"] = "Vehicle Details";
 
-    var typeName = Model.VehicleTypeRef?.Name ?? "Unknown";
+    var typeName = Model.VehicleTypeRef != null ? (Model.VehicleTypeRef.Icon + " " + Model.VehicleTypeRef.Name) : "Unknown";
+	var bageColor = Model.VehicleTypeRef != null ? Model.VehicleTypeRef.BadgeColor : "#6c757d"; // Default to gray
+	var badgeTextColor = Model.VehicleTypeRef != null ? Model.VehicleTypeRef.BadgeTextColor : "#ffffff"; // Default to white
 }
 
 <div class="container">
     <div class="col-md-8 mx-auto">
-        <a asp-action="Index" class="sv-back-link small">&larr; Back to My Vehicles</a>
-
         <div class="garage-header">
             <h3>Vehicle Details</h3>
         </div>
@@ -25,13 +25,10 @@
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
                                 <h4 class="m-2 mt-0">@Model.RegistrationNumber</h4>
-                                <span class="sv-badge">
+                                <span class="sv-badge" style="background-color:@bageColor; color:@badgeTextColor;">
                                     @typeName
                                 </span>
                             </div>
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn sv-btn-details w-25">
-                                Edit
-                            </a>
                         </div>
 
                         <hr class="my-3" />
@@ -50,11 +47,23 @@
                             <dd class="col-7 mb-0">@Model.NumberOfWheels</dd>
 
                             <dt class="col-5 sv-label">Assigned Spot</dt>
-                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, typeName)</dd>
+                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, (Model.VehicleTypeRef?.RequiredSpots ?? 1))</dd>
 
                             <dt class="col-5 sv-label">Registered Time</dt>
                             <dd class="col-7 mb-0">@Model.ArrivalTime.ToString("yyyy-MM-dd HH:mm")</dd>
                         </dl>
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="sv-back-link">
+                                &larr; Back
+                            </a>
+
+                            <a asp-action="Edit" asp-route-id="@Model?.Id" class="sv-back-link">
+                                Edit &rarr;
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

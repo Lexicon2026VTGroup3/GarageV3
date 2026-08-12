@@ -35,15 +35,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.EnsureCreated();
-
-        // Roles and the admin user must exist BEFORE vehicles are seeded,
-        // since every vehicle now requires an OwnerId.
-        await DbInitializer.SeedRolesAndAdminAsync(app.Services);
-
-        AddVehicleTypeAndParkingSpotSeedData(context, services);
-        await AddSeedDataAsync(context, services);
+        await DbInitializer.InitializeAsync(services);
     }
     catch (Exception ex)
     {
@@ -75,81 +67,3 @@ app.MapControllerRoute(
 app.MapRazorPages();
 
 app.Run();
-
-
-async Task AddSeedDataAsync(ApplicationDbContext context, IServiceProvider services)
-{
-    if (context.Vehicles.Any())
-    {
-        return;
-    }
-
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    var adminUser = await userManager.FindByEmailAsync("admin@garage.com");
-
-    if (adminUser == null)
-    {
-        return;
-    }
-
-    var typesByName = context.VehicleTypes.ToDictionary(vt => vt.Name, vt => vt.Id);
-
-    var vehiclesToSeed = new List<Vehicle>
-    {
-        new Vehicle { VehicleTypeRefId = typesByName["Car"], OwnerId = adminUser.Id, RegistrationNumber = "ABC123", Color = "Black", Brand = "Volvo", Model = "XC60", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddHours(-3) },
-        new Vehicle { VehicleTypeRefId = typesByName["Motorcycle"], OwnerId = adminUser.Id, RegistrationNumber = "KTM555", Color = "Orange", Brand = "KTM", Model = "Duke 390", NumberOfWheels = 2, ArrivalTime = DateTime.Now.AddDays(-1) },
-        new Vehicle { VehicleTypeRefId = typesByName["Bus"], OwnerId = adminUser.Id, RegistrationNumber = "BUS010", Color = "Red", Brand = "Scania", Model = "Citywide", NumberOfWheels = 6, ArrivalTime = DateTime.Now.AddHours(-8) },
-        new Vehicle { VehicleTypeRefId = typesByName["Truck"], OwnerId = adminUser.Id, RegistrationNumber = "TRK777", Color = "Blue", Brand = "Volvo", Model = "FH16", NumberOfWheels = 10, ArrivalTime = DateTime.Now.AddDays(-2) },
-        new Vehicle { VehicleTypeRefId = typesByName["Bicycle"], OwnerId = adminUser.Id, RegistrationNumber = "BIK111", Color = "Yellow", Brand = "Crescent", Model = "Kebne", NumberOfWheels = 2, ArrivalTime = DateTime.Now.AddMinutes(-30) },
-        new Vehicle { VehicleTypeRefId = typesByName["Airplane"], OwnerId = adminUser.Id, RegistrationNumber = "SAS901", Color = "White", Brand = "Airbus", Model = "A320neo", NumberOfWheels = 3, ArrivalTime = DateTime.Now.AddHours(-15) },
-        new Vehicle { VehicleTypeRefId = typesByName["Boat"], OwnerId = adminUser.Id, RegistrationNumber = "BOA999", Color = "White", Brand = "Buster", Model = "Magnum", NumberOfWheels = 0, ArrivalTime = DateTime.Now.AddHours(-12) },
-        new Vehicle { VehicleTypeRefId = typesByName["Car"], OwnerId = adminUser.Id, RegistrationNumber = "XYZ789", Color = "White", Brand = "Tesla", Model = "Model Y", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddHours(-5) },
-        new Vehicle { VehicleTypeRefId = typesByName["Car"], OwnerId = adminUser.Id, RegistrationNumber = "MLB442", Color = "Grey", Brand = "Volkswagen", Model = "Golf", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddMinutes(-45) },
-        new Vehicle { VehicleTypeRefId = typesByName["Car"], OwnerId = adminUser.Id, RegistrationNumber = "SWE999", Color = "Silver", Brand = "Polestar", Model = "Polestar 2", NumberOfWheels = 4, ArrivalTime = DateTime.Now.AddHours(-2) }
-    };
-
-    context.Vehicles.AddRange(vehiclesToSeed);
-    context.SaveChanges();
-
-    var parkingService = services.GetRequiredService<IParkingSpotService>();
-
-    foreach (var vehicle in vehiclesToSeed)
-    {
-        var type = context.VehicleTypes.Find(vehicle.VehicleTypeRefId);
-        if (type != null)
-        {
-            parkingService.AssignSpot(vehicle.Id);
-        }
-    }
-}
-
-void AddVehicleTypeAndParkingSpotSeedData(ApplicationDbContext context, IServiceProvider services)
-{
-    if (!context.VehicleTypes.Any())
-    {
-        var vehicleTypes = new[]
-        {
-            new VehicleTypeEntity { Name = "Car", ShortName = "Car", Icon = "fa-solid fa-car", BadgeColor = "#006AA7", BadgeTextColor = "#ffffff", RequiredSpots = 1, MaxVehiclesPerSpot = 1 },
-            new VehicleTypeEntity { Name = "Motorcycle", ShortName = "MC", Icon = "fa-solid fa-motorcycle", BadgeColor = "#FECC02", BadgeTextColor = "#1a1a1a", RequiredSpots = 1, MaxVehiclesPerSpot = 3 },
-            new VehicleTypeEntity { Name = "Bus", ShortName = "Bus", Icon = "fa-solid fa-bus", BadgeColor = "#1a7a4c", BadgeTextColor = "#ffffff", RequiredSpots = 2, MaxVehiclesPerSpot = 1 },
-            new VehicleTypeEntity { Name = "Truck", ShortName = "Truck", Icon = "fa-solid fa-truck", BadgeColor = "#2c3e50", BadgeTextColor = "#ffffff", RequiredSpots = 3, MaxVehiclesPerSpot = 1 },
-            new VehicleTypeEntity { Name = "Bicycle", ShortName = "Bike", Icon = "fa-solid fa-bicycle", BadgeColor = "#6b7280", BadgeTextColor = "#ffffff", RequiredSpots = 1, MaxVehiclesPerSpot = 5 },
-            new VehicleTypeEntity { Name = "Airplane", ShortName = "Plane", Icon = "fa-solid fa-plane", BadgeColor = "#6b7280", BadgeTextColor = "#ffffff", RequiredSpots = 3, MaxVehiclesPerSpot = 1 },
-            new VehicleTypeEntity { Name = "Boat", ShortName = "Boat", Icon = "fa-solid fa-ship", BadgeColor = "#0891b2", BadgeTextColor = "#ffffff", RequiredSpots = 2, MaxVehiclesPerSpot = 1 }
-        };
-
-        context.VehicleTypes.AddRange(vehicleTypes);
-        context.SaveChanges();
-    }
-
-    if (!context.ParkingSpots.Any())
-    {
-        var settings = services.GetRequiredService<IOptions<GarageSettings>>().Value;
-
-        var spots = Enumerable.Range(1, settings.TotalParkingSpots)
-            .Select(n => new ParkingSpot { Number = n, IsOutOfService = false });
-
-        context.ParkingSpots.AddRange(spots);
-        context.SaveChanges();
-    }
-}

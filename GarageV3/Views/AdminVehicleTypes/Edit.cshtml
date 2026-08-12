@@ -41,6 +41,17 @@
                                 <span asp-validation-for="Icon" class="text-danger"></span>
                             </div>
 
+                            @* <div class="form-group mb-3">
+                                <label asp-for="Icon" class="form-label"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i id="iconPreview" class="@(string.IsNullOrEmpty(Model?.Icon) ? "fa-solid fa-icons" : Model.Icon)"></i>
+                                    </span>
+                                    <input asp-for="Icon" id="iconInput" class="form-control" placeholder="fa-solid fa-car" />
+                                </div>
+                                <span asp-validation-for="Icon" class="text-danger"></span>
+                            </div> *@
+
                             <div class="row">
                                 <div class="col-md-6 form-group mb-3">
                                     <label asp-for="BadgeColor" class="control-label"></label>
@@ -83,4 +94,10 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    @* <script>
+        document.getElementById('iconInput').addEventListener('input', function() {
+            const preview = document.getElementById('iconPreview');
+            preview.className = this.value.trim() || 'fa-solid fa-icons';
+        });
+    </script> *@
 }

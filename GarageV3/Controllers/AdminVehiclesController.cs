@@ -47,10 +47,10 @@ public class AdminVehiclesController : Controller
                 Brand = v.Brand,
                 Model = v.Model,
                 Color = v.Color,
-                NumberOfWheels = v.NumberOfWheels,
                 ArrivalTime = v.ArrivalTime,
-                VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : string.Empty,
-                AssignedSpotNumber = v.AssignedSpotNumber,
+                VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
+                VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
+                ParkingSpotId = v.AssignedSpotNumber,
                 OwnerEmail = v.Owner != null ? v.Owner.Email! : "No Email"
             })
             .ToListAsync();
@@ -83,7 +83,11 @@ public class AdminVehiclesController : Controller
             NumberOfWheels = vehicle.NumberOfWheels,
             ArrivalTime = vehicle.ArrivalTime,
             VehicleTypeName = vehicle.VehicleTypeRef?.Name ?? "Unknown",
-            AssignedSpotNumber = vehicle.AssignedSpotNumber,
+            VehicleTypeIcon = vehicle.VehicleTypeRef?.Icon ?? "Unknown",
+            BadgeColor = vehicle.VehicleTypeRef?.BadgeColor ?? "Unknown",
+            BadgeTextColor = vehicle.VehicleTypeRef?.BadgeTextColor ?? "Unknown",
+            RequiredSpots = vehicle.VehicleTypeRef?.RequiredSpots ?? 1,
+            ParkingSpotId = vehicle.AssignedSpotNumber,
             OwnerEmail = vehicle.Owner?.Email ?? "No Owner"
         };
 
@@ -99,7 +103,7 @@ public class AdminVehiclesController : Controller
                 .Select(vt => new SelectListItem
                 {
                     Value = vt.Id.ToString(),
-                    Text = vt.Name
+                    Text = vt.Icon + " " + vt.Name
                 })
                 .ToListAsync(),
 
@@ -169,7 +173,7 @@ public class AdminVehiclesController : Controller
             .Select(vt => new SelectListItem
             {
                 Value = vt.Id.ToString(),
-                Text = vt.Name
+                Text = vt.Icon + " " + vt.Name
             })
             .ToListAsync();
 
@@ -221,7 +225,7 @@ public class AdminVehiclesController : Controller
                 .Select(vt => new SelectListItem
                 {
                     Value = vt.Id.ToString(),
-                    Text = vt.Name
+                    Text = vt.Icon + " " + vt.Name
                 })
                 .ToListAsync()
         };
@@ -302,7 +306,7 @@ public class AdminVehiclesController : Controller
             .Select(vt => new SelectListItem
             {
                 Value = vt.Id.ToString(),
-                Text = vt.Name
+                Text = vt.Icon + " " + vt.Name
             })
             .ToListAsync();
 
@@ -330,7 +334,25 @@ public class AdminVehiclesController : Controller
 
         if (vehicle == null) return NotFound();
 
-        return View(vehicle);
+        var viewModel = new AdminVehiclesIndexViewModel
+        {
+            Id = vehicle.Id,
+            RegistrationNumber = vehicle.RegistrationNumber,
+            Brand = vehicle.Brand,
+            Model = vehicle.Model,
+            Color = vehicle.Color,
+            NumberOfWheels = vehicle.NumberOfWheels,
+            ArrivalTime = vehicle.ArrivalTime,
+            VehicleTypeName = vehicle.VehicleTypeRef?.Name ?? "Unknown",
+            VehicleTypeIcon = vehicle.VehicleTypeRef?.Icon ?? "Unknown",
+            BadgeColor = vehicle.VehicleTypeRef?.BadgeColor ?? "Unknown",
+            BadgeTextColor = vehicle.VehicleTypeRef?.BadgeTextColor ?? "Unknown",
+            RequiredSpots = vehicle.VehicleTypeRef?.RequiredSpots ?? 1,
+            ParkingSpotId = vehicle.AssignedSpotNumber,
+            OwnerEmail = vehicle.Owner?.Email ?? "No Owner"
+        };
+
+        return View(viewModel);
     }
 
     // POST: AdminVehicles/Delete/5
