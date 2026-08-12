@@ -18,6 +18,8 @@
 
         public int? ParkingSpotId { get; set; }
 
+        public int? ActiveParkingSessionId { get; set; }
+
         public string DisplayVehicleType => $"{VehicleTypeIcon} {VehicleTypeName}";
     }
 }

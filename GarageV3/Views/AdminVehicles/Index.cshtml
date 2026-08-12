@@ -62,6 +62,14 @@
                             <td>@item.Color</td>
                             <td>@(item.ParkingSpotId.HasValue ? item.ParkingSpotId.ToString() : "Not assigned")</td>
                             <td class="text-end">
+                                @if (!item.ParkingSpotId.HasValue)
+                                {
+                                    <a asp-controller="ParkedVehicles" asp-action="Park" asp-route-id="@item.Id" class="btn btn-success sv-action-btn w-sm-auto">Park</a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="ParkedVehicles" asp-action="CheckOut" asp-route-id="@item.Id" class="btn btn-warning sv-action-btn w-sm-auto">Check Out</a>
+                                }
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Details</a>
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Edit</a>
                                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger sv-action-btn w-sm-auto">Delete</a>

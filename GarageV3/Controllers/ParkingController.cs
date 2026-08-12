@@ -29,12 +29,14 @@ namespace GarageV3.Controllers
         }
 
         // GET: Parking/Park
-        public async Task<IActionResult> Park()
+        public async Task<IActionResult> Park(int? id)
         {
             var userId = _userManager.GetUserId(User);
 
             var viewModel = new ParkVehicleViewModel
             {
+                VehicleId = id ?? 0,
+
                 Vehicles = await BuildOwnedUnparkedVehiclesSelectListAsync(userId!),
                 ParkingSpots = await BuildParkingSpotsSelectListAsync()
             };
@@ -178,6 +180,21 @@ namespace GarageV3.Controllers
             TempData["SuccessMessage"] = $"Successfully checked out {receiptViewModel.RegistrationNumber}.";
 
             return RedirectToAction("Receipt", new { id = session.Id });
+        }
+
+        // GET: Parking/Receipt/5
+        public IActionResult Receipt(int? id)
+        {
+            if (TempData["Receipt"] is string jsonReceipt)
+            {
+                var receiptVm = JsonSerializer.Deserialize<ReceiptViewModel>(jsonReceipt);
+                if (receiptVm != null)
+                {
+                    return View(receiptVm);
+                }
+            }
+
+            return RedirectToAction("Index", "MyVehicles");
         }
 
         // TASK-06.2: only the logged-in member's own, currently unparked vehicles

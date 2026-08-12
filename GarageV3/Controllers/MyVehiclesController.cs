@@ -29,6 +29,14 @@ public class MyVehiclesController : Controller
     {
         var userId = _userManager.GetUserId(User);
 
+        var activeSessions = await _context.ParkingSessions
+        .Where(ps => ps.CheckOutTime == null)
+        .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.ParkingSpotId);
+
+        var activeSessionIds = await _context.ParkingSessions
+        .Where(ps => ps.CheckOutTime == null)
+        .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.Id);
+
         var vehicles = await _context.Vehicles
             .Where(v => v.OwnerId == userId)
             .Include(v => v.VehicleTypeRef)
@@ -43,7 +51,10 @@ public class MyVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
-                ParkingSpotId = v.AssignedSpotNumber
+
+                ParkingSpotId = activeSessions.ContainsKey(v.Id) ? activeSessions[v.Id] : (int?)null,
+
+                ActiveParkingSessionId = activeSessionIds.ContainsKey(v.Id) ? activeSessionIds[v.Id] : (int?)null
             })
             .ToListAsync();
 
