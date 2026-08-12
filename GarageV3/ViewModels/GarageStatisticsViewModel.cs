@@ -2,25 +2,19 @@
 {
     public class GarageStatisticsViewModel
     {
-        public int TotalVehicles { get; set; }
-
-        public int TotalWheels { get; set; }
+        public int FreeSpots { get; set; }
+        public int OccupiedSpots { get; set; }
+        public int OutOfServiceSpots { get; set; }
 
         /// <summary>
-        /// What the currently parked vehicles have generated in fees so far,
-        /// calculated as if each checked out right now.
+        /// Number of currently active vehicles, grouped by vehicle type name.
         /// </summary>
-        public decimal EstimatedCurrentRevenue { get; set; }
+        public List<VehicleTypeCount> ActiveVehiclesByType { get; set; } = new();
+    }
 
-        public IReadOnlyDictionary<string, int> VehicleCountsByType { get; set; }
-            = new Dictionary<string, int>();
-
-        public string? MostCommonType { get; set; }
-
-        public TimeSpan AverageParkedDuration { get; set; }
-
-        public DateTime? LongestParkedArrivalTime { get; set; }
-
-        public string? LongestParkedRegistrationNumber { get; set; }
+    public class VehicleTypeCount
+    {
+        public string TypeName { get; set; } = string.Empty;
+        public int Count { get; set; }
     }
 }
