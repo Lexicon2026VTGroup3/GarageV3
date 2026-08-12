@@ -28,5 +28,7 @@
         public decimal HourlyRateAtCheckIn { get; set; }
 
         public decimal TotalPrice { get; set; }
+
+        public string ReturnController { get; set; } = "MyVehicles";
     }
 }

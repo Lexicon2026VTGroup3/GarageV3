@@ -22,6 +22,8 @@ namespace GarageV3.ViewModels
 
         public int? ParkingSpotId { get; set; }
 
+        public int? ActiveParkingSessionId { get; set; }
+
         public DateTime? ArrivalTime { get; set; }
 
         public string DisplayVehicleType => $"{VehicleTypeIcon} {VehicleTypeName}";

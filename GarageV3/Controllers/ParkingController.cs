@@ -162,6 +162,8 @@ namespace GarageV3.Controllers
                 return RedirectToAction("CheckOut", new { id = parkingSessionId });
             }
 
+            var returnCtrl = User.IsInRole("Admin") ? "AdminVehicles" : "MyVehicles";
+
             var receiptViewModel = new ReceiptViewModel
             {
                 VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
@@ -173,7 +175,8 @@ namespace GarageV3.Controllers
                 AssignedSpotNumber = session.ParkingSpot?.Number ?? -1,
                 ArrivalTime = session.ArriveTime,
                 CheckOutTime = session.CheckOutTime ?? DateTime.UtcNow,
-                TotalPrice = session.TotalPrice ?? 0
+                TotalPrice = session.TotalPrice ?? 0,
+                ReturnController = returnCtrl
             };
 
             TempData["Receipt"] = JsonSerializer.Serialize(receiptViewModel);
