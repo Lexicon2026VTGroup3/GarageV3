@@ -37,6 +37,7 @@ public class UserManagementController : Controller
                 UserName = user.UserName ?? string.Empty,
                 Email = user.Email ?? string.Empty,
                 FullName = $"{user.FirstName} {user.LastName}",
+                PersonalIdentityNumber = user.PersonalIdentityNumber ?? string.Empty,
                 Roles = roles
             });
         }

@@ -159,6 +159,7 @@ public class RegisterModel : PageModel
             user.FirstName = Input.FirstName;
             user.LastName = Input.LastName;
             user.PersonalIdentityNumber = normalizedPin;
+            user.EmailConfirmed = true; // If EmailConfirmed is false, Identity silently skips generating the token. 
 
             await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
             await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);

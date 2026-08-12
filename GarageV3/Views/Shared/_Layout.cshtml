@@ -1,5 +1,4 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,44 +10,97 @@
     <link rel="stylesheet" href="~/css/sweden-theme.css" asp-append-version="true" />
     <link rel="icon" type="image/png" href="~/img/garage-icon.png" />
 </head>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-dark sv-navbar mb-3">
             <div class="container">
-                <a class="navbar-brand d-flex align-items-center" asp-area=""
-                   asp-controller="ParkedVehicles" asp-action="Index">
-                    <img src="~/img/garage-icon.png" alt="Garage Icon" class="garage-icon me-2" />
+
+                <a class="navbar-brand d-flex align-items-center"
+                   asp-area=""
+                   asp-controller="ParkedVehicles"
+                   asp-action="Index">
+
+                    <img src="~/img/garage-icon.png"
+                         alt="Garage Icon"
+                         class="garage-icon me-2" />
 
                     <span class="sv-navbar-brand">Garage3</span>
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation">
+
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
+
                     <ul class="navbar-nav">
+
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
                             <li class="nav-item">
-                                <a class="nav-link sv-nav-link" asp-controller="Parking" asp-action="Park">Park a Vehicle</a>
+                                <a class="nav-link sv-nav-link"
+                                   asp-controller="Parking"
+                                   asp-action="Park">
+                                    Park a Vehicle
+                                </a>
                             </li>
+
                             <li class="nav-item">
-                                <a class="nav-link sv-nav-link" asp-controller="MyVehicles" asp-action="Index">My Vehicles</a>
+                                <a class="nav-link sv-nav-link"
+                                   asp-controller="MyVehicles"
+                                   asp-action="Index">
+                                    My Vehicles
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link sv-nav-link"
+                                   asp-controller="Parking"
+                                   asp-action="History">
+                                    My History
+                                </a>
                             </li>
                         }
+
                         <li class="nav-item">
-                            <a class="nav-link sv-nav-link" asp-area="" asp-controller="ParkedVehicles" asp-action="Index">Overview</a>
+                            <a class="nav-link sv-nav-link"
+                               asp-area=""
+                               asp-controller="ParkedVehicles"
+                               asp-action="Index">
+                                Overview
+                            </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link sv-nav-link" asp-area="" asp-controller="ParkedVehicles" asp-action="Overview">Spot Map</a>
+                            <a class="nav-link sv-nav-link"
+                               asp-area=""
+                               asp-controller="ParkedVehicles"
+                               asp-action="Overview">
+                                Spot Map
+                            </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link sv-nav-link" asp-area="" asp-controller="ParkedVehicles" asp-action="Statistics">Statistics</a>
+                            <a class="nav-link sv-nav-link"
+                               asp-area=""
+                               asp-controller="ParkedVehicles"
+                               asp-action="Statistics">
+                                Statistics
+                            </a>
                         </li>
+
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item dropdown">
+
                                 <a class="nav-link dropdown-toggle sv-nav-link"
                                    href="#"
                                    id="adminDropdown"
@@ -58,7 +110,9 @@
                                     Admin
                                 </a>
 
-                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                <ul class="dropdown-menu dropdown-menu-end"
+                                    aria-labelledby="adminDropdown">
+
                                     <li>
                                         <a class="dropdown-item"
                                            asp-controller="AdminParking"
@@ -82,15 +136,21 @@
                                             User Management
                                         </a>
                                     </li>
+
                                 </ul>
+
                             </li>
                         }
+
                     </ul>
+
                     <partial name="_LoginPartial" />
+
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -102,10 +162,12 @@
             &copy; 2026 - GarageV3 - Group 3
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/parkedDuration.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
