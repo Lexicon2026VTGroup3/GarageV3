@@ -45,6 +45,9 @@ namespace GarageV3.Controllers
             }
 
             var historySessions = await _context.ParkingSessions
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v.VehicleTypeRef)
+                .Include(ps => ps.ParkingSpot)
                 .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
                 .OrderByDescending(ps => ps.CheckOutTime)
                 .Select(ps => new ParkingHistoryViewModel
