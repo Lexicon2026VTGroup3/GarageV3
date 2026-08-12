@@ -76,7 +76,7 @@ public class ForgotPasswordModel : PageModel
                 "/Account/ResetPassword",
                 pageHandler: null,
                 values: new { token, email = user.Email },
-                protocol: Request.Scheme);
+                protocol: Request.Scheme) ?? "Cannot generate reset password link!";
 
             await _emailSender.SendEmailAsync(
                 Input.Email,

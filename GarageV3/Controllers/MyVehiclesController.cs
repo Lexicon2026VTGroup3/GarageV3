@@ -224,7 +224,7 @@ public class MyVehiclesController : Controller
                 TempData["SuccessMessage"] = $"Successfully updated {vm.RegistrationNumber}.";
                 return RedirectToAction(nameof(Index));
             }
-            catch (Exception ex)
+            catch
             {
                 ModelState.AddModelError(string.Empty, "Could not save changes.");
             }

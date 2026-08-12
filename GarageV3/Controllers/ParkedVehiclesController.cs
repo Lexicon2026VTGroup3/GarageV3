@@ -412,7 +412,7 @@ public class ParkedVehiclesController : Controller
             AssignedSpotNumber = parkedvehicle.AssignedSpotNumber,
             ArrivalTime = parkedvehicle.ArrivalTime,
             CheckOutTime = checkOutTime,
-            TotalPrice = _garageFeeService.CalculateFee(parkedvehicle.ArrivalTime, checkOutTime)
+            TotalPrice = _garageFeeService.CalculateFee(parkedvehicle.ArrivalTime, checkOutTime, 20.0m, false)
         };
 
         // _parkingSpotService.FreeSpot(parkedvehicle.Id); 

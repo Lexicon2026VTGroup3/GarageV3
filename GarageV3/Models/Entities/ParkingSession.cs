@@ -1,4 +1,6 @@
-﻿namespace GarageV3.Models.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace GarageV3.Models.Entities
 {
     public class ParkingSession
     {
@@ -15,6 +17,9 @@
 
         public decimal HourlyRateAtCheckIn { get; set; }
         public decimal? TotalPrice { get; set; }
+
+        [Column(TypeName = "decimal(5,2)")]
+        public decimal AppliedDiscountPercentage { get; set; } // T.ex. 0.20
 
         /// <summary>
         /// Active means not yet checked out. Per spec, occupancy is derived

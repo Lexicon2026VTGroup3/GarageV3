@@ -27,5 +27,7 @@
         public decimal HourlyRateAtCheckIn { get; set; }
 
         public decimal TotalPrice { get; set; }
+        
+        public decimal AppliedDiscountPercentage { get; set; }
     }
 }

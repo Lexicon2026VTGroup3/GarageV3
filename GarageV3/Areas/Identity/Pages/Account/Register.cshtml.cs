@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using GarageV3.Data;
+using GarageV3.Models.Enums;
 using GarageV3.Validation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -160,6 +161,21 @@ public class RegisterModel : PageModel
             user.LastName = Input.LastName;
             user.PersonalIdentityNumber = normalizedPin;
             user.EmailConfirmed = true; // If EmailConfirmed is false, Identity silently skips generating the token. 
+
+            // UserStory13: Set pro-membership for new users in 30 days
+            var now = DateTime.UtcNow;
+
+            var today = now.Date;
+            var dateOfBirth = DateTime.ParseExact(normalizedPin.Substring(0, 8), "yyyyMMdd", null);
+            var age = today.Year - dateOfBirth.Year;
+            if (dateOfBirth.Date > today.AddYears(-age))
+            {
+                age--;
+            }
+
+            user.MembershipType = MembershipType.Pro;
+            user.MembershipStartDate = now;
+            user.MembershipEndDate = age >= 65 ? now.AddYears(2) : now.AddDays(30);
 
             await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
             await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);

@@ -102,6 +102,24 @@
                     <td>@Model.HourlyRateAtCheckIn.ToString("0.00") SEK</td>
                 </tr>
 
+                <tr>
+                    <th class="text-danger">Applied Discount</th>
+                    <td class="fw-bold">
+                        @if (Model.AppliedDiscountPercentage > 0)
+                        {
+                            <p class="text-danger">
+                                <strong>Pro-discount (-@((Model.AppliedDiscountPercentage * 100).ToString("0"))%)</strong>
+                            </p>
+						}
+						else
+						{
+							<p class="text-info">
+								<strong>Ingen rabatt</strong>
+							</p>
+						}
+                    </td>
+                </tr>
+
                 <tr class="table-success">
                     <th>Parking Fee</th>
                     <td class="fw-bold">

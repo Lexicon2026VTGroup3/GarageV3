@@ -41,15 +41,27 @@
                             <div class="parked-duration">
                                 <strong>Parked Duration: </strong>
                                 <span class="duration-cell"
-                                      data-arrival-time='@Model.CheckInTime.ToString("yyyy-MM-ddTHH:mm:ss")'>
+                                      data-arrival-time='@DateTime.SpecifyKind(Model.CheckInTime, DateTimeKind.Utc).ToString("o")'>
                                 </span>
                             </div>
+
+                            @if (Model.IsProMember)
+                            {
+                                <div class="parked-duration text-danger">
+                                    <strong>Pro-discount: </strong>
+                                    <span>
+                                        <strong>-@((Model.AppliedDiscountPercentage * 100).ToString("0"))%</strong>
+                                    </span>
+                                </div>
+                            }
 
                             <div class="parked-duration">
                                 <strong>Total Price: </strong>
                                 <span class="total-price-cell"
-                                      data-arrival-time='@Model.CheckInTime.ToString("yyyy-MM-ddTHH:mm:ss")'
-                                      data-hourly-rate='@Model.HourlyRateAtCheckIn'>
+                                      data-arrival-time='@DateTime.SpecifyKind(Model.CheckInTime, DateTimeKind.Utc).ToString("o")'
+                                      data-hourly-rate='@Model.HourlyRateAtCheckIn.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)'
+                                      data-is-pro='@Model.IsProMember.ToString().ToLower()'>
+                                    @Model.TotalPrice.ToString("F2") kr
                                 </span>
                             </div>
                         </div>

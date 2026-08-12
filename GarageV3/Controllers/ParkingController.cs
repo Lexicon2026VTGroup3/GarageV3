@@ -1,5 +1,6 @@
 ﻿using GarageV3.Data;
 using GarageV3.Models.Entities;
+using GarageV3.Services;
 using GarageV3.Services.Interfaces;
 using GarageV3.ViewModels.Parking;
 using Microsoft.AspNetCore.Authorization;
@@ -17,15 +18,19 @@ namespace GarageV3.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IParkingSessionService _parkingSessionService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly GarageFeeService _garageFeeService;
 
         public ParkingController(
             ApplicationDbContext context,
             IParkingSessionService parkingSessionService,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            GarageFeeService garageFeeService
+        )
         {
             _context = context;
             _parkingSessionService = parkingSessionService;
             _userManager = userManager;
+            _garageFeeService = garageFeeService;
         }
 
         // GET: /Parking
@@ -45,10 +50,10 @@ namespace GarageV3.Controllers
             }
 
             var historySessions = await _context.ParkingSessions
+                .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
                 .Include(ps => ps.Vehicle)
                     .ThenInclude(v => v.VehicleTypeRef)
                 .Include(ps => ps.ParkingSpot)
-                .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
                 .OrderByDescending(ps => ps.CheckOutTime)
                 .Select(ps => new ParkingHistoryViewModel
                 {
@@ -151,6 +156,7 @@ namespace GarageV3.Controllers
         public async Task<IActionResult> CheckOut(int id)
         {
             var session = await _context.ParkingSessions
+                .Where(ps => ps.CheckOutTime == null && ps.Vehicle != null)
                 .Include(ps => ps.Vehicle)
                     .ThenInclude(v => v.Owner)
                 .Include(ps => ps.Vehicle)
@@ -161,17 +167,26 @@ namespace GarageV3.Controllers
 
             if (session == null || session.Vehicle == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "Unable to checkout. The parking session was not found or is already checked out.";
+                return RedirectToAction("Index", "MyVehicles");
             }
 
-            var currentUserId = _userManager.GetUserId(User);
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Challenge();
+            }
+            var currentUserId = currentUser.Id;
             bool isAdmin = User.IsInRole("Admin");
             bool isOwner = session.Vehicle.Owner?.Id == currentUserId;
+            bool isPro = currentUser.IsProMember;
 
             if (!isAdmin && !isOwner)
             {
                 return Forbid(); // Returns HTTP 403 Forbidden / Access Denied
             }
+
+            var arriveTimeUtc = DateTime.SpecifyKind(session.ArriveTime, DateTimeKind.Utc);
 
             var viewModel = new CheckOutViewModel
             {
@@ -187,8 +202,11 @@ namespace GarageV3.Controllers
                 VehicleType = session.Vehicle.VehicleTypeRef,
                 VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
                 ParkingSpotId = session.ParkingSpot?.Id ?? -1,
-                CheckInTime = session.ArriveTime,
-                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn
+                CheckInTime = arriveTimeUtc,
+                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
+                IsProMember = isPro,
+                TotalPrice = _garageFeeService.CalculateFee(arriveTimeUtc, DateTime.UtcNow, session.HourlyRateAtCheckIn, isPro),
+                AppliedDiscountPercentage = isPro ? 0.20m : 0
             };
 
             return View(viewModel);
@@ -220,7 +238,8 @@ namespace GarageV3.Controllers
                 ArrivalTime = session.ArriveTime,
                 CheckOutTime = session.CheckOutTime ?? DateTime.UtcNow,
                 HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
-                TotalPrice = session.TotalPrice ?? 0
+                TotalPrice = session.TotalPrice ?? 0,
+                AppliedDiscountPercentage = session.AppliedDiscountPercentage
             };
 
             TempData["Receipt"] = JsonSerializer.Serialize(receiptViewModel);
