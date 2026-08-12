@@ -1,10 +1,8 @@
 ﻿using GarageV3.Models.Entities;
-using GarageV3.Models.Enums;
 using GarageV3.Models.Parking;
 using GarageV3.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using VehicleType = GarageV3.Models.Enums.VehicleType;
 
 namespace GarageV3.Services
 {
@@ -39,48 +37,44 @@ namespace GarageV3.Services
 
             foreach (var vehicle in parkedVehicles)
             {
-                int start = vehicle.AssignedSpotNumber!.Value;
-                var vehicleType = vehicle.VehicleTypeRef!.EnumValue;
+                if (vehicle.VehicleTypeRef == null) continue;
 
-                if (VehicleSpotRequirement.IsMotorcycleType(vehicleType))
+                int start = vehicle.AssignedSpotNumber!.Value;
+                var vType = vehicle.VehicleTypeRef;
+
+                if (vType.MaxVehiclesPerSpot > 1)
                 {
                     var spot = spots.FirstOrDefault(s => s.SpotNumber == start);
                     if (spot == null) continue;
+
+                    if (spot.OccupyingVehicleTypeEntityId == null)
+                    {
+                        spot.OccupyingVehicleTypeEntityId = vType.Id;
+                    }
 
                     spot.MotorcycleSlotsUsed++;
-                    spot.OccupyingVehicleType = VehicleType.Motorcycle;
+                    
                     if (spot.OccupyingVehicleRegNums == null)
                     {
-                        spot.OccupyingVehicleRegNums = new string[VehicleSpotRequirement.MotorcycleSlotsPerSpot];
+                        spot.OccupyingVehicleRegNums = new string[vType.MaxVehiclesPerSpot];
                     }
-                    spot.OccupyingVehicleRegNums[spot.MotorcycleSlotsUsed - 1] = vehicle.RegistrationNumber;
+                    
+                    int slotIndex = Array.IndexOf(spot.OccupyingVehicleRegNums, null);
+                    if (slotIndex >= 0 && slotIndex < vType.MaxVehiclesPerSpot)
+                    {
+                        spot.OccupyingVehicleRegNums[slotIndex] = vehicle.RegistrationNumber;
+                    }
 
-                    if (spot.MotorcycleSlotsUsed >= VehicleSpotRequirement.MotorcycleSlotsPerSpot)
+                    int currentCount = spot.OccupyingVehicleRegNums.Count(r => r != null);
+                    if (currentCount >= vType.MaxVehiclesPerSpot)
                     {
                         spot.IsFree = false;
                     }
                 }
-                else if (VehicleSpotRequirement.IsBicycleType(vehicleType))
-                {
-                    var spot = spots.FirstOrDefault(s => s.SpotNumber == start);
-                    if (spot == null) continue;
 
-                    spot.BicycleSlotsUsed++;
-                    spot.OccupyingVehicleType = VehicleType.Bicycle;
-                    if (spot.OccupyingVehicleRegNums == null)
-                    {
-                        spot.OccupyingVehicleRegNums = new string[VehicleSpotRequirement.BicycleSlotsPerSpot];
-                    }
-                    spot.OccupyingVehicleRegNums[spot.BicycleSlotsUsed - 1] = vehicle.RegistrationNumber;
-
-                    if (spot.BicycleSlotsUsed >= VehicleSpotRequirement.BicycleSlotsPerSpot)
-                    {
-                        spot.IsFree = false;
-                    }
-                }
                 else
                 {
-                    int required = VehicleSpotRequirement.GetRequiredWholeSpots(vehicleType);
+                    int required = vType.RequiredSpots;
 
                     for (int i = 0; i < required; i++)
                     {
@@ -88,8 +82,9 @@ namespace GarageV3.Services
                         if (spot == null) continue;
 
                         spot.IsFree = false;
-                        spot.OccupyingVehicleType = vehicleType;
+                        spot.OccupyingVehicleTypeEntityId = vType.Id;
                         spot.OccupyingVehicleId = vehicle.Id;
+                        
                         if (spot.OccupyingVehicleRegNums == null)
                         {
                             spot.OccupyingVehicleRegNums = new string[1];
@@ -109,102 +104,94 @@ namespace GarageV3.Services
             return spots;
         }
 
-        public bool CanParkVehicleType(VehicleType type)
+        public bool CanParkVehicleType(VehicleTypeEntity vehicleType)
         {
             var overview = GetSpotOverview();
 
-            if (VehicleSpotRequirement.IsMotorcycleType(type))
+            if (vehicleType.MaxVehiclesPerSpot > 1)
             {
-                return HasFreeMotorcycleSlot(overview);
-            }
-            else if (VehicleSpotRequirement.IsBicycleType(type))
-            {
-                return HasFreeBicycleSlot(overview);
+                return HasFreeSharedSlot(overview, vehicleType.Id);
             }
 
-            int required = VehicleSpotRequirement.GetRequiredWholeSpots(type);
-            return FindContiguousFreeStart(overview, required) != null;
+            return FindContiguousFreeStart(overview, vehicleType.RequiredSpots) != null;
         }
 
-        public IReadOnlyDictionary<VehicleType, bool> GetVehicleTypeAvailability()
+        public IReadOnlyDictionary<int, bool> GetVehicleTypeAvailability()
         {
             var overview = GetSpotOverview();
-            var result = new Dictionary<VehicleType, bool>();
+            var result = new Dictionary<int, bool>();
+            var allTypes = _context.VehicleTypes.ToList();
 
-            foreach (VehicleType type in Enum.GetValues(typeof(VehicleType)))
+            foreach (var type in allTypes)
             {
-                if (VehicleSpotRequirement.IsMotorcycleType(type))
+                if (type.MaxVehiclesPerSpot > 1)
                 {
-                    result[type] = HasFreeMotorcycleSlot(overview);
-                }
-                else if (VehicleSpotRequirement.IsBicycleType(type))
-                {
-                    result[type] = HasFreeBicycleSlot(overview);
+                    result[type.Id] = HasFreeSharedSlot(overview, type.Id);
                 }
                 else
                 {
-                    int required = VehicleSpotRequirement.GetRequiredWholeSpots(type);
-                    result[type] = FindContiguousFreeStart(overview, required) != null;
+                    result[type.Id] = FindContiguousFreeStart(overview, type.RequiredSpots) != null;
                 }
             }
 
             return result;
         }
 
-        public ParkingAssignmentResult AssignSpot(VehicleType type, int vehicleId)
+        public ParkingAssignmentResult AssignSpot(int vehicleId)
         {
-            var vehicle = _context.Vehicles.FirstOrDefault(v => v.Id == vehicleId);
-            if (vehicle == null)
+            var vehicle = _context.Vehicles
+                .Include(v => v.VehicleTypeRef)
+                .FirstOrDefault(v => v.Id == vehicleId);
+
+            if (vehicle == null || vehicle.VehicleTypeRef == null)
             {
-                return ParkingAssignmentResult.Fail("Vehicle not found.");
+                return ParkingAssignmentResult.Fail("Vehicle or Vehicle Type not found.");
             }
 
+            var vType = vehicle.VehicleTypeRef;
             var overview = GetSpotOverview();
 
-            if (VehicleSpotRequirement.IsMotorcycleType(type))
+            if (vType.MaxVehiclesPerSpot > 1)
             {
                 var spot = overview.FirstOrDefault(s =>
-                    s.MotorcycleSlotsUsed < VehicleSpotRequirement.MotorcycleSlotsPerSpot &&
-                    (s.OccupyingVehicleType == null || s.OccupyingVehicleType == VehicleType.Motorcycle));
+                    s.IsFree &&
+                    (s.OccupyingVehicleTypeEntityId == null || s.OccupyingVehicleTypeEntityId == vType.Id));
 
-                if (spot == null)
+                var targetSpot = overview.FirstOrDefault(s =>
+                    (s.OccupyingVehicleTypeEntityId == null || s.OccupyingVehicleTypeEntityId == vType.Id) &&
+                    (s.OccupyingVehicleRegNums == null || s.OccupyingVehicleRegNums.Count(r => r != null) < vType.MaxVehiclesPerSpot) &&
+                    s.IsFree);
+
+                if (targetSpot == null)
                 {
-                    return ParkingAssignmentResult.Fail("No motorcycle slot available.");
+                    targetSpot = overview.FirstOrDefault(s => s.IsFree && s.OccupyingVehicleRegNums == null);
                 }
 
-                vehicle.AssignedSpotNumber = spot.SpotNumber;
-                _context.SaveChanges();
-                return ParkingAssignmentResult.Ok(new List<int> { spot.SpotNumber });
-            }
-            else if (VehicleSpotRequirement.IsBicycleType(type))
-            {
-                var spot = overview.FirstOrDefault(s =>
-                    s.BicycleSlotsUsed < VehicleSpotRequirement.BicycleSlotsPerSpot &&
-                    (s.OccupyingVehicleType == null || s.OccupyingVehicleType == VehicleType.Bicycle));
-
-                if (spot == null)
+                if (targetSpot == null)
                 {
-                    return ParkingAssignmentResult.Fail("No bicycle slot available.");
+                    return ParkingAssignmentResult.Fail($"No available shared slot for {vType.Name}.");
                 }
 
-                vehicle.AssignedSpotNumber = spot.SpotNumber;
+                vehicle.AssignedSpotNumber = targetSpot.SpotNumber;
                 _context.SaveChanges();
-                return ParkingAssignmentResult.Ok(new List<int> { spot.SpotNumber });
+                return ParkingAssignmentResult.Ok(new List<int> { targetSpot.SpotNumber });
             }
-
-            int required = VehicleSpotRequirement.GetRequiredWholeSpots(type);
-            int? start = FindContiguousFreeStart(overview, required);
-
-            if (start == null)
+            else
             {
-                return ParkingAssignmentResult.Fail($"Not enough contiguous free spots for {type}.");
+                int required = vType.RequiredSpots;
+                int? start = FindContiguousFreeStart(overview, required);
+
+                if (start == null)
+                {
+                    return ParkingAssignmentResult.Fail($"Not enough contiguous free spots for {vType.Name}.");
+                }
+
+                vehicle.AssignedSpotNumber = start;
+                _context.SaveChanges();
+
+                var assignedSpots = Enumerable.Range(start.Value, required).ToList();
+                return ParkingAssignmentResult.Ok(assignedSpots);
             }
-
-            vehicle.AssignedSpotNumber = start;
-            _context.SaveChanges();
-
-            var assignedSpots = Enumerable.Range(start.Value, required).ToList();
-            return ParkingAssignmentResult.Ok(assignedSpots);
         }
 
         public void ReleaseSpot(int vehicleId)
@@ -216,18 +203,11 @@ namespace GarageV3.Services
             _context.SaveChanges();
         }
 
-        private static bool HasFreeMotorcycleSlot(IReadOnlyList<ParkingSpotInfo> overview)
+        private static bool HasFreeSharedSlot(IReadOnlyList<ParkingSpotInfo> overview, int typeId)
         {
             return overview.Any(s =>
-                s.MotorcycleSlotsUsed < VehicleSpotRequirement.MotorcycleSlotsPerSpot &&
-                (s.OccupyingVehicleType == null || s.OccupyingVehicleType == VehicleType.Motorcycle));
-        }
-
-        private static bool HasFreeBicycleSlot(IReadOnlyList<ParkingSpotInfo> overview)
-        {
-            return overview.Any(s =>
-                s.BicycleSlotsUsed < VehicleSpotRequirement.BicycleSlotsPerSpot &&
-                (s.OccupyingVehicleType == null || s.OccupyingVehicleType == VehicleType.Bicycle));
+                s.IsFree || 
+                (s.OccupyingVehicleTypeEntityId == typeId && s.OccupyingVehicleRegNums?.Count(r => r != null) < 5));
         }
 
         private static int? FindContiguousFreeStart(IReadOnlyList<ParkingSpotInfo> overview, int required)
@@ -239,7 +219,7 @@ namespace GarageV3.Services
                 for (int i = 0; i < required; i++)
                 {
                     var spot = overview[start - 1 + i];
-                    if (!spot.IsFree || spot.MotorcycleSlotsUsed > 0 || spot.BicycleSlotsUsed > 0)
+                    if (!spot.IsFree || spot.OccupyingVehicleRegNums != null)
                     {
                         allFree = false;
                         break;

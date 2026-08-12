@@ -1,69 +1,54 @@
-using GarageV3.Models.Enums;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System.Linq;
 
 public static class VehicleTypeHelper
 {
-    public static string GetBadgeColor(VehicleType type) =>
-        type switch
+    public static string GetBadgeColor(string typeName) =>
+        typeName switch
         {
-            VehicleType.Car        => "#006AA7",
-            VehicleType.Motorcycle => "#FECC02",
-            VehicleType.Truck      => "#2c3e50",
-            VehicleType.Bus        => "#1a7a4c",
-            VehicleType.Boat       => "#0891b2",
-            VehicleType.Airplane   => "#6b7280",
-            _                      => "#6c757d"
+            "Car" => "#006AA7",
+            "Motorcycle" => "#FECC02",
+            "Truck" => "#2c3e50",
+            "Bus" => "#1a7a4c",
+            "Boat" => "#0891b2",
+            "Airplane" => "#6b7280",
+            _ => "#6c757d"
         };
 
-    public static string GetBadgeTextColor(VehicleType type) =>
-        type == VehicleType.Motorcycle ? "#1a1a1a" : "#ffffff";
+    public static string GetBadgeTextColor(string typeName) =>
+        typeName == "Motorcycle" ? "#1a1a1a" : "#ffffff";
 
-    public static IEnumerable<SelectListItem> GetValidVehicleTypes(VehicleType vehicleType)
+    public static IEnumerable<SelectListItem> GetValidVehicleTypes(string currentTypeName, IEnumerable<string> allTypeNames)
     {
-        var allTypes = Enum.GetValues(typeof(VehicleType))
-                .Cast<VehicleType>()
-                .Select(v => new SelectListItem
-                {
-                    Text = v.GetDisplayName(),
-                    Value = v.ToString()
-                });
-
-        IEnumerable<SelectListItem> filtered = vehicleType switch
+        var allItems = allTypeNames.Select(name => new SelectListItem
         {
-            VehicleType.Airplane or VehicleType.Boat =>
-                    allTypes,
+            Text = name,
+            Value = name
+        });
 
-            VehicleType.Bus or VehicleType.Truck =>
-                    allTypes.Where(v =>
-                        v.Value != nameof(VehicleType.Airplane) &&
-                        v.Value != nameof(VehicleType.Boat)
-                    ),
+        IEnumerable<SelectListItem> filtered = currentTypeName switch
+        {
+            "Airplane" or "Boat" =>
+                allItems,
 
-            VehicleType.Car =>
-                    allTypes.Where(v =>
-                        v.Value != nameof(VehicleType.Airplane) &&
-                        v.Value != nameof(VehicleType.Boat) &&
-                        v.Value != nameof(VehicleType.Bus) &&
-                        v.Value != nameof(VehicleType.Truck)
-                    ),
+            "Bus" or "Truck" =>
+                allItems.Where(v => v.Value != "Airplane" && v.Value != "Boat"),
 
-            VehicleType.Motorcycle =>
-                    allTypes.Where(v =>
-                        v.Value == nameof(VehicleType.Motorcycle)
-                    ),
+            "Car" =>
+                allItems.Where(v => v.Value != "Airplane" && v.Value != "Boat" && v.Value != "Bus" && v.Value != "Truck"),
 
-            VehicleType.Bicycle =>
-                    allTypes.Where(v =>
-                        v.Value == nameof(VehicleType.Bicycle)
-                    ),
+            "Motorcycle" =>
+                allItems.Where(v => v.Value == "Motorcycle"),
 
-            _ => allTypes
+            "Bicycle" =>
+                allItems.Where(v => v.Value == "Bicycle"),
+
+            _ => allItems
         };
 
-        if (filtered.Count() == allTypes.Count())
-        return filtered;
+        if (filtered.Count() == allItems.Count())
+            return filtered;
 
         var hintOption = new SelectListItem
         {
@@ -74,20 +59,4 @@ public static class VehicleTypeHelper
 
         return filtered.Append(hintOption);
     }
-
-    public static VehicleType ToEnum(string vehicleTypeName)
-    {
-        return vehicleTypeName switch
-        {
-            "Car" => VehicleType.Car,
-            "Motorcycle" => VehicleType.Motorcycle,
-            "Bus" => VehicleType.Bus,
-            "Truck" => VehicleType.Truck,
-            "Bicycle" => VehicleType.Bicycle,
-            "Airplane" => VehicleType.Airplane,
-            "Boat" => VehicleType.Boat,
-            _ => VehicleType.Car
-        };
-    }
-
 }

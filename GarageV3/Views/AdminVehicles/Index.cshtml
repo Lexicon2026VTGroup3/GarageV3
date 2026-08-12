@@ -47,7 +47,7 @@
                         <th>Registration Number</th>
                         <th>Brand / Model</th>
                         <th>Color</th>
-                        <th>Assigned Spot</th>
+                        <th>Parking Spot</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -56,11 +56,11 @@
                     {
                         <tr>
                             <td><span class="text-muted">@item.OwnerEmail</span></td>
-                            <td>@item.VehicleTypeName</td>
+                            <td>@item.DisplayVehicleType</td>
                             <td><strong>@item.RegistrationNumber</strong></td>
                             <td>@item.Brand @item.Model</td>
                             <td>@item.Color</td>
-                            <td>@(item.AssignedSpotNumber.HasValue ? item.AssignedSpotNumber.ToString() : "Not assigned")</td>
+                            <td>@(item.ParkingSpotId.HasValue ? item.ParkingSpotId.ToString() : "Not assigned")</td>
                             <td class="text-end">
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Details</a>
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Edit</a>

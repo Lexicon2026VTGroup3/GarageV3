@@ -5,9 +5,9 @@
 @{
     ViewData["Title"] = Model.Title;
 
-    var vehicleType = VehicleTypeHelper.ToEnum(Model.VehicleType?.Name ?? "");
-    var badgeColor = VehicleTypeHelper.GetBadgeColor(vehicleType);
-    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(vehicleType);
+    var vehicleTypeName = Model.VehicleType?.Name ?? "Unknown";
+    var badgeColor = VehicleTypeHelper.GetBadgeColor(vehicleTypeName);
+    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(vehicleTypeName);
 }
 
 <div class="container">
@@ -59,7 +59,7 @@
                         <div class="mb-3">
                             <h4 class="m-2 mt-0">@Model.RegistrationNumber</h4>
                             <span class="sv-badge" style="background-color:@badgeColor; color:@badgeTextColor;">
-                                @vehicleType.GetDisplayName()
+                                @vehicleTypeName
                             </span>
                         </div>
 
@@ -77,7 +77,7 @@
                             <dd class="col-7 mb-0">@Model.NumberOfWheels</dd>
 
                             <dt class="col-5 sv-label">Parking Spot</dt>
-                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.ParkingSpotId, vehicleType)</dd>
+                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.ParkingSpotId, vehicleTypeName)</dd>
 
                             <dt class="col-5 sv-label">Hourly Rate</dt>
                             <dd class="col-7 mb-0">@Model.HourlyRateAtCheckIn.ToString("C")</dd>
