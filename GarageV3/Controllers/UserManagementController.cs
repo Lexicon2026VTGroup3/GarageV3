@@ -157,6 +157,10 @@ public class UserManagementController : Controller
                 Email = user.Email ?? string.Empty,
                 PersonalIdentityNumber = user.PersonalIdentityNumber ?? string.Empty,
 
+                TotalRevenue = _context.ParkingSessions
+                .Where(s => s.Vehicle != null && s.Vehicle.OwnerId == user.Id && s.CheckOutTime != null)
+                .Sum(s => (decimal?)(s.TotalPrice)) ?? 0m,
+
                 Vehicles = _context.Vehicles
                     .Where(vehicle => vehicle.OwnerId == user.Id)
                     .Select(vehicle => new MemberVehicleViewModel

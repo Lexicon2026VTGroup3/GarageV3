@@ -56,8 +56,29 @@ namespace GarageV3.Services
                 FreeSpots = free,
                 OccupiedSpots = occupied,
                 OutOfServiceSpots = outOfService,
-                ActiveVehiclesByType = activeByType
+                ActiveVehiclesByType = activeByType,
+
+                TopUsers = await GetTopLucrativeUsersAsync()
             };
+        }
+
+        public async Task<List<TopUserViewModel>> GetTopLucrativeUsersAsync()
+        {
+            return await _context.ParkingSessions
+                .AsNoTracking()
+                .Include(s => s.Vehicle)
+                    .ThenInclude(v => v!.Owner)
+                .Where(s => s.CheckOutTime != null && s.Vehicle != null && s.Vehicle.Owner != null)
+                .GroupBy(s => new { s.Vehicle!.OwnerId, s.Vehicle.Owner!.FirstName, s.Vehicle.Owner.LastName, s.Vehicle.Owner.Email })
+                .Select(g => new TopUserViewModel
+                {
+                    Id = g.Key.OwnerId,
+                    FullName = !string.IsNullOrEmpty(g.Key.FirstName) ? $"{g.Key.FirstName} {g.Key.LastName}" : g.Key.Email ?? "Unknown",
+                    TotalRevenue = g.Sum(s => (decimal?)(s.TotalPrice)) ?? 0m
+                })
+                .OrderByDescending(u => u.TotalRevenue)
+                .Take(5)
+                .ToListAsync();
         }
     }
 }

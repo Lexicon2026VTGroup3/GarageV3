@@ -8,5 +8,6 @@
         public string Email { get; set; } = string.Empty;
         public string PersonalIdentityNumber { get; set; } = string.Empty;
         public List<MemberVehicleViewModel> Vehicles { get; set; } = new();
+        public decimal TotalRevenue { get; set; }
     }
 }
