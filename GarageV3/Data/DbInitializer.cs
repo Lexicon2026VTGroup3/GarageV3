@@ -96,7 +96,15 @@ public static class DbInitializer
             var settings = services.GetRequiredService<IOptions<GarageSettings>>().Value;
 
             var spots = Enumerable.Range(1, settings.TotalParkingSpots)
-                .Select(n => new ParkingSpot { Number = n, IsOutOfService = false, CapacityUnits = 3 });
+                .Select(n => new ParkingSpot
+                {
+                    Number = n,
+                    IsOutOfService = false,
+                    CapacityUnits = 3,
+                    Location = n <= 5 ? "Floor 1 - Section A" :
+                               n <= 10 ? "Floor 1 - Section B" :
+                               n <= 15 ? "Floor 2 - Section A" : "Floor 2 - Section B"
+                });
 
             await context.ParkingSpots.AddRangeAsync(spots);
             await context.SaveChangesAsync();
