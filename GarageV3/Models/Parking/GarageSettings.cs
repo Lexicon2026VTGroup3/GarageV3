@@ -11,5 +11,7 @@
         public int TotalParkingSpots { get; set; }
 
         public decimal HourlyRate { get; set; }
+
+        public decimal ProDiscountRate { get; set; }
     }
 }
