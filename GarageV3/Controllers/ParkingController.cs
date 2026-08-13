@@ -131,8 +131,6 @@ namespace GarageV3.Controllers
                 .Include(ps => ps.Vehicle)
                     .ThenInclude(v => v.VehicleTypeRef)
                 .Include(ps => ps.ParkingSpot)
-                .Include(ps => ps.Allocations)
-                    .ThenInclude(a => a.ParkingSpot)
                 .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
                 .OrderByDescending(ps => ps.CheckOutTime)
                 .Select(ps => new ParkingHistoryViewModel
@@ -360,10 +358,10 @@ namespace GarageV3.Controllers
         }
 
         // TASK-06.3 / US12: shows every spot not out of service. A spot is
-        // disabled only once it has no free capacity units left at all — a
-        // spot partially used by e.g. one motorcycle still shows as pickable,
-        // with its remaining capacity in the label, so a second/third
-        // motorcycle can still choose it manually.
+        // disabled only once it has no free capacity units left at all. A
+        // fully free spot just shows "Free"; a partially used spot (e.g. one
+        // motorcycle sharing it) shows its remaining capacity so a second or
+        // third motorcycle can still choose it manually.
         private async Task<IEnumerable<SelectListItem>> BuildParkingSpotsSelectListAsync()
         {
             var spots = await _context.ParkingSpots
@@ -383,10 +381,16 @@ namespace GarageV3.Controllers
                 int free = s.CapacityUnits - used;
                 var label = s.Location != null ? $"#{s.Number} ({s.Location})" : $"#{s.Number}";
 
+                string statusText = free <= 0
+                    ? "Occupied"
+                    : used > 0
+                        ? $"{free}/{s.CapacityUnits} free"
+                        : "Free";
+
                 return new SelectListItem
                 {
                     Value = s.Id.ToString(),
-                    Text = free <= 0 ? $"{label} (Occupied)" : $"{label} ({free}/{s.CapacityUnits} free)",
+                    Text = $"{label} ({statusText})",
                     Disabled = free <= 0
                 };
             });

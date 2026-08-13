@@ -75,13 +75,16 @@ public static class DbInitializer
         {
             var vehicleTypes = new[]
             {
-            new VehicleTypeEntity { Name = "Car", ShortName = "Car", Icon = "🚗", BadgeColor = "#006AA7", BadgeTextColor = "#ffffff", RequiredSpots = 1, MaxVehiclesPerSpot = 1 },
-            new VehicleTypeEntity { Name = "Motorcycle", ShortName = "MC", Icon = "🏍️", BadgeColor = "#FECC02", BadgeTextColor = "#1a1a1a", RequiredSpots = 1, MaxVehiclesPerSpot = 3 },
-            new VehicleTypeEntity { Name = "Bus", ShortName = "Bus", Icon = "🚌", BadgeColor = "#1a7a4c", BadgeTextColor = "#ffffff", RequiredSpots = 2, MaxVehiclesPerSpot = 1 },
-            new VehicleTypeEntity { Name = "Truck", ShortName = "Truck", Icon = "🚚", BadgeColor = "#2c3e50", BadgeTextColor = "#ffffff", RequiredSpots = 3, MaxVehiclesPerSpot = 1 },
-            new VehicleTypeEntity { Name = "Bicycle", ShortName = "Bike", Icon = "🚲", BadgeColor = "#6b7280", BadgeTextColor = "#ffffff", RequiredSpots = 1, MaxVehiclesPerSpot = 5 },
-            new VehicleTypeEntity { Name = "Airplane", ShortName = "Plane", Icon = "✈", BadgeColor = "#6b7280", BadgeTextColor = "#ffffff", RequiredSpots = 3, MaxVehiclesPerSpot = 1 },
-            new VehicleTypeEntity { Name = "Boat", ShortName = "Boat", Icon = "🚤", BadgeColor = "#0891b2", BadgeTextColor = "#ffffff", RequiredSpots = 2, MaxVehiclesPerSpot = 1 }
+            // RequiredSpaceUnits: matches a standard ParkingSpot.CapacityUnits
+            // of 3. Car takes a whole spot; Motorcycle/Bicycle share one (3
+            // fit); large vehicles need more than one spot's capacity (US12).
+            new VehicleTypeEntity { Name = "Car", ShortName = "Car", Icon = "🚗", BadgeColor = "#006AA7", BadgeTextColor = "#ffffff", RequiredSpots = 1, MaxVehiclesPerSpot = 1, RequiredSpaceUnits = 3 },
+            new VehicleTypeEntity { Name = "Motorcycle", ShortName = "MC", Icon = "🏍️", BadgeColor = "#FECC02", BadgeTextColor = "#1a1a1a", RequiredSpots = 1, MaxVehiclesPerSpot = 3, RequiredSpaceUnits = 1 },
+            new VehicleTypeEntity { Name = "Bus", ShortName = "Bus", Icon = "🚌", BadgeColor = "#1a7a4c", BadgeTextColor = "#ffffff", RequiredSpots = 2, MaxVehiclesPerSpot = 1, RequiredSpaceUnits = 6 },
+            new VehicleTypeEntity { Name = "Truck", ShortName = "Truck", Icon = "🚚", BadgeColor = "#2c3e50", BadgeTextColor = "#ffffff", RequiredSpots = 3, MaxVehiclesPerSpot = 1, RequiredSpaceUnits = 6 },
+            new VehicleTypeEntity { Name = "Bicycle", ShortName = "Bike", Icon = "🚲", BadgeColor = "#6b7280", BadgeTextColor = "#ffffff", RequiredSpots = 1, MaxVehiclesPerSpot = 5, RequiredSpaceUnits = 1 },
+            new VehicleTypeEntity { Name = "Airplane", ShortName = "Plane", Icon = "✈", BadgeColor = "#6b7280", BadgeTextColor = "#ffffff", RequiredSpots = 3, MaxVehiclesPerSpot = 1, RequiredSpaceUnits = 9 },
+            new VehicleTypeEntity { Name = "Boat", ShortName = "Boat", Icon = "🚤", BadgeColor = "#0891b2", BadgeTextColor = "#ffffff", RequiredSpots = 2, MaxVehiclesPerSpot = 1, RequiredSpaceUnits = 6 }
         };
 
             await context.VehicleTypes.AddRangeAsync(vehicleTypes);
@@ -93,7 +96,7 @@ public static class DbInitializer
             var settings = services.GetRequiredService<IOptions<GarageSettings>>().Value;
 
             var spots = Enumerable.Range(1, settings.TotalParkingSpots)
-                .Select(n => new ParkingSpot { Number = n, IsOutOfService = false });
+                .Select(n => new ParkingSpot { Number = n, IsOutOfService = false, CapacityUnits = 3 });
 
             await context.ParkingSpots.AddRangeAsync(spots);
             await context.SaveChangesAsync();
@@ -134,16 +137,10 @@ public static class DbInitializer
         await context.Vehicles.AddRangeAsync(vehiclesToSeed);
         await context.SaveChangesAsync();
 
-        var parkingService = services.GetRequiredService<IParkingSpotService>();
-
-        foreach (var vehicle in vehiclesToSeed)
-        {
-            var type = await context.VehicleTypes.FindAsync(vehicle.VehicleTypeRefId);
-            if (type != null)
-            {
-                parkingService.AssignSpot(vehicle.Id);
-            }
-        }
+        // Seeded vehicles are registered only, not auto-parked, so there's
+        // something to try out manually on the "Park a Vehicle" page.
+        // (Previously auto-parked via the old ParkingSpotService.AssignSpot —
+        // dropped along with that service.)
     }
 
 }

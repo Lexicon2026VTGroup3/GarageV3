@@ -12,7 +12,7 @@ namespace GarageV3.ViewModels
 
         [Required(ErrorMessage = "Registration Number is required.")]
         [Remote(action: "CheckDuplicate",
-            controller: "ParkedVehicles",
+            controller: "MyVehicles",
             AdditionalFields = nameof(Id),
             ErrorMessage = "This registration number already exists!")]
         [Display(Name = "Registration Number")]
@@ -45,9 +45,6 @@ namespace GarageV3.ViewModels
 
         [BindNever]
         public IEnumerable<SelectListItem>? VehicleTypes { get; set; }
-
-        [Display(Name = "Parking Spot")]
-        public int? AssignedSpotNumber { get; set; }
 
         public string VehicleTypeName { get; set; } = string.Empty;
 

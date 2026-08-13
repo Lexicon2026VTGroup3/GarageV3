@@ -39,6 +39,10 @@ public class AdminVehiclesController : Controller
             query = query.Where(v => v.Owner != null && v.Owner.Email != null && v.Owner.Email.Contains(searchQuery));
         }
 
+        var activeSessionSpots = _context.ParkingSessions
+            .Where(s => s.CheckOutTime == null)
+            .Select(s => new { s.VehicleId, s.ParkingSpotId });
+
         var vehicleItems = await query
             .Select(v => new AdminVehiclesIndexViewModel
             {
@@ -50,7 +54,10 @@ public class AdminVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
-                ParkingSpotId = v.AssignedSpotNumber,
+                ParkingSpotId = activeSessionSpots
+                    .Where(s => s.VehicleId == v.Id)
+                    .Select(s => (int?)s.ParkingSpotId)
+                    .FirstOrDefault(),
                 OwnerEmail = v.Owner != null ? v.Owner.Email! : "No Email"
             })
             .ToListAsync();
@@ -73,6 +80,11 @@ public class AdminVehiclesController : Controller
 
         if (vehicle == null) return NotFound();
 
+        var activeSpotId = await _context.ParkingSessions
+            .Where(s => s.VehicleId == vehicle.Id && s.CheckOutTime == null)
+            .Select(s => (int?)s.ParkingSpotId)
+            .FirstOrDefaultAsync();
+
         var viewModel = new AdminVehiclesIndexViewModel
         {
             Id = vehicle.Id,
@@ -87,7 +99,7 @@ public class AdminVehiclesController : Controller
             BadgeColor = vehicle.VehicleTypeRef?.BadgeColor ?? "Unknown",
             BadgeTextColor = vehicle.VehicleTypeRef?.BadgeTextColor ?? "Unknown",
             RequiredSpots = vehicle.VehicleTypeRef?.RequiredSpots ?? 1,
-            ParkingSpotId = vehicle.AssignedSpotNumber,
+            ParkingSpotId = activeSpotId,
             OwnerEmail = vehicle.Owner?.Email ?? "No Owner"
         };
 
@@ -334,6 +346,11 @@ public class AdminVehiclesController : Controller
 
         if (vehicle == null) return NotFound();
 
+        var activeSpotId = await _context.ParkingSessions
+            .Where(s => s.VehicleId == vehicle.Id && s.CheckOutTime == null)
+            .Select(s => (int?)s.ParkingSpotId)
+            .FirstOrDefaultAsync();
+
         var viewModel = new AdminVehiclesIndexViewModel
         {
             Id = vehicle.Id,
@@ -348,7 +365,7 @@ public class AdminVehiclesController : Controller
             BadgeColor = vehicle.VehicleTypeRef?.BadgeColor ?? "Unknown",
             BadgeTextColor = vehicle.VehicleTypeRef?.BadgeTextColor ?? "Unknown",
             RequiredSpots = vehicle.VehicleTypeRef?.RequiredSpots ?? 1,
-            ParkingSpotId = vehicle.AssignedSpotNumber,
+            ParkingSpotId = activeSpotId,
             OwnerEmail = vehicle.Owner?.Email ?? "No Owner"
         };
 

@@ -22,7 +22,7 @@ public class UserManagementController : Controller
     {
         _context = context;
         _userManager = userManager;
-        _roleManager = roleManager; 
+        _roleManager = roleManager;
     }
 
     // GET: UserManagement
@@ -171,7 +171,10 @@ public class UserManagementController : Controller
                         Model = vehicle.Model,
                         NumberOfWheels = vehicle.NumberOfWheels,
                         ArrivalTime = vehicle.ArrivalTime,
-                        ParkingSpotNumber = vehicle.AssignedSpotNumber
+                        ParkingSpotNumber = _context.ParkingSessions
+                            .Where(s => s.VehicleId == vehicle.Id && s.CheckOutTime == null)
+                            .Select(s => (int?)s.ParkingSpotId)
+                            .FirstOrDefault()
                     })
                     .ToList()
             })

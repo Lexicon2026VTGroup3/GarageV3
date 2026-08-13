@@ -29,6 +29,10 @@ public class MyVehiclesController : Controller
     {
         var userId = _userManager.GetUserId(User);
 
+        var activeSessionSpots = _context.ParkingSessions
+            .Where(s => s.CheckOutTime == null)
+            .Select(s => new { s.VehicleId, s.ParkingSpotId });
+
         var vehicles = await _context.Vehicles
             .Where(v => v.OwnerId == userId)
             .Include(v => v.VehicleTypeRef)
@@ -43,7 +47,10 @@ public class MyVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
-                ParkingSpotId = v.AssignedSpotNumber
+                ParkingSpotId = activeSessionSpots
+                    .Where(s => s.VehicleId == v.Id)
+                    .Select(s => (int?)s.ParkingSpotId)
+                    .FirstOrDefault()
             })
             .ToListAsync();
 
@@ -139,6 +146,17 @@ public class MyVehiclesController : Controller
             .ToListAsync();
 
         return View(viewModel);
+    }
+
+    // GET/POST: MyVehicles/CheckDuplicate
+    // Used by the [Remote] validation attribute on RegistrationNumber
+    // in ParkedVehicleFormViewModel.
+    [HttpGet]
+    [AcceptVerbs("GET", "POST")]
+    public async Task<IActionResult> CheckDuplicate(string registrationNumber, int? id)
+    {
+        bool isDuplicate = await _vehicleHandler.IsExistingAsync(registrationNumber, id);
+        return Json(!isDuplicate);
     }
 
     public async Task<IActionResult> Edit(int? id)
@@ -241,8 +259,8 @@ public class MyVehiclesController : Controller
         return View(vm);
     }
 
-// GET: MyVehicles/Delete/5
-public async Task<IActionResult> Delete(int? id)
+    // GET: MyVehicles/Delete/5
+    public async Task<IActionResult> Delete(int? id)
     {
         if (id == null)
         {
