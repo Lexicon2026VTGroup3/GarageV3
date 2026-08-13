@@ -34,6 +34,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .Property(s => s.TotalPrice)
             .HasColumnType("decimal(10,2)");
 
+        builder.Entity<ParkingAllocation>()
+            .HasOne(a => a.ParkingSession)
+            .WithMany(s => s.Allocations)
+            .HasForeignKey(a => a.ParkingSessionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<ParkingAllocation>()
+            .HasOne(a => a.ParkingSpot)
+            .WithMany()
+            .HasForeignKey(a => a.ParkingSpotId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Automatically mark all DateTime properties read from DB as Utc
         var utcConverter = new ValueConverter<DateTime, DateTime>(
             v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(),
@@ -56,4 +68,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<VehicleTypeEntity> VehicleTypes { get; set; }
 
     public DbSet<ParkingSpot> ParkingSpots { get; set; }
+
+    public DbSet<ParkingAllocation> ParkingAllocations { get; set; }
 }

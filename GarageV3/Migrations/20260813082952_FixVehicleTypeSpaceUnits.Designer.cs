@@ -4,6 +4,7 @@ using GarageV3.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GarageV3.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260813082952_FixVehicleTypeSpaceUnits")]
+    partial class FixVehicleTypeSpaceUnits
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -56,15 +59,6 @@ namespace GarageV3.Migrations
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<DateTime?>("MembershipEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("MembershipStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MembershipType")
-                        .HasColumnType("int");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -147,9 +141,6 @@ namespace GarageV3.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("AppliedDiscountPercentage")
-                        .HasColumnType("decimal(5,2)");
 
                     b.Property<DateTime>("ArriveTime")
                         .HasColumnType("datetime2");

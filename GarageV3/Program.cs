@@ -34,9 +34,9 @@ builder.Services.AddScoped<GarageFeeService>();
 
 builder.Services.Configure<GarageSettings>(
     builder.Configuration.GetSection(GarageSettings.SectionName));
-builder.Services.AddScoped<IParkingSpotService, ParkingSpotService>();
 builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+builder.Services.AddScoped<IParkingAllocationService, ParkingAllocationService>();
 
 var app = builder.Build();
 
@@ -71,7 +71,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=ParkedVehicles}/{action=Index}/{id?}")
+    pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 app.MapRazorPages();

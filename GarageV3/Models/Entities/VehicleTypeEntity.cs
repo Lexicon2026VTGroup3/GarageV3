@@ -33,5 +33,13 @@ namespace GarageV3.Models.Entities
 
         [Required]
         public int MaxVehiclesPerSpot { get; set; } = 1;
+
+        /// <summary>
+        /// How many capacity units of a single ParkingSpot this vehicle type
+        /// consumes (US12). If this exceeds one spot's CapacityUnits, the
+        /// vehicle needs multiple contiguous spots.
+        /// </summary>
+        [Required]
+        public int RequiredSpaceUnits { get; set; } = 3;
     }
 }

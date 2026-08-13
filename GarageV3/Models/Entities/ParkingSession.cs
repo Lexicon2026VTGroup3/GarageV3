@@ -12,6 +12,14 @@ namespace GarageV3.Models.Entities
         public required int ParkingSpotId { get; set; }
         public ParkingSpot? ParkingSpot { get; set; }
 
+        /// <summary>
+        /// The actual spot(s) allocated to this session. For a normal vehicle
+        /// this has exactly one entry using the whole spot's capacity; for a
+        /// shared spot (motorcycles) it may share a spot with other sessions;
+        /// for a large vehicle it has multiple entries across contiguous spots.
+        /// </summary>
+        public ICollection<ParkingAllocation> Allocations { get; set; } = new List<ParkingAllocation>();
+
         public DateTime ArriveTime { get; set; }
         public DateTime? CheckOutTime { get; set; }
 

@@ -1,6 +1,5 @@
 ﻿using GarageV3.Data;
 using GarageV3.Models.Entities;
-using GarageV3.Services;
 using GarageV3.Services.Interfaces;
 using GarageV3.ViewModels.Parking;
 using Microsoft.AspNetCore.Authorization;
@@ -8,9 +7,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
 using System.Text.Json;
-using static System.Collections.Specialized.BitVector32;
-
+using System.Threading.Tasks;
+using GarageV3.Models.Parking;
 namespace GarageV3.Controllers
 {
     [Authorize]
@@ -18,26 +20,101 @@ namespace GarageV3.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IParkingSessionService _parkingSessionService;
+        private readonly IParkingAllocationService _parkingAllocationService;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly GarageFeeService _garageFeeService;
+        private readonly GarageSettings _settings;
 
         public ParkingController(
             ApplicationDbContext context,
             IParkingSessionService parkingSessionService,
+            IParkingAllocationService parkingAllocationService,
             UserManager<ApplicationUser> userManager,
-            GarageFeeService garageFeeService
-        )
+            IOptions<GarageSettings> settings)
         {
             _context = context;
             _parkingSessionService = parkingSessionService;
+            _parkingAllocationService = parkingAllocationService;
             _userManager = userManager;
-            _garageFeeService = garageFeeService;
+            _settings = settings.Value;
         }
 
         // GET: /Parking
         public IActionResult Index()
         {
             return RedirectToAction("Index", "MyVehicles");
+        }
+
+        // GET: Parking/SpotMap
+        public async Task<IActionResult> SpotMap()
+        {
+            var spots = await _context.ParkingSpots
+                .OrderBy(s => s.Number)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var activeAllocations = await _context.ParkingAllocations
+                .Where(a => a.ParkingSession!.CheckOutTime == null)
+                .Include(a => a.ParkingSession)
+                    .ThenInclude(s => s!.Vehicle)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var usedUnitsBySpot = activeAllocations
+                .GroupBy(a => a.ParkingSpotId)
+                .ToDictionary(g => g.Key, g => g.Sum(a => a.UnitsUsed));
+
+            var regNumsBySpot = activeAllocations
+                .GroupBy(a => a.ParkingSpotId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(a => a.ParkingSession!.Vehicle?.RegistrationNumber ?? string.Empty)
+                          .Where(r => r != string.Empty)
+                          .Distinct()
+                          .ToList());
+
+            var spotIdToPosition = new Dictionary<int, string>();
+            var multiSpotSessions = activeAllocations
+                .GroupBy(a => a.ParkingSessionId)
+                .Where(g => g.Count() > 1);
+
+            foreach (var group in multiSpotSessions)
+            {
+                var orderedSpotIds = group
+                    .Select(a => a.ParkingSpotId)
+                    .Distinct()
+                    .Select(id => spots.First(s => s.Id == id))
+                    .OrderBy(s => s.Number)
+                    .Select(s => s.Id)
+                    .ToList();
+
+                for (int i = 0; i < orderedSpotIds.Count; i++)
+                {
+                    spotIdToPosition[orderedSpotIds[i]] =
+                        i == 0 ? "Left" :
+                        i == orderedSpotIds.Count - 1 ? "Right" :
+                        "Middle";
+                }
+            }
+
+            var spotInfos = spots.Select(s => new SpotMapSpotInfo
+            {
+                SpotNumber = s.Number,
+                Location = s.Location,
+                IsOutOfService = s.IsOutOfService,
+                CapacityUnits = s.CapacityUnits,
+                UsedUnits = usedUnitsBySpot.GetValueOrDefault(s.Id, 0),
+                OccupyingRegistrationNumbers = regNumsBySpot.GetValueOrDefault(s.Id, new List<string>()),
+                Position = spotIdToPosition.GetValueOrDefault(s.Id, "Whole")
+            }).ToList();
+
+            var viewModel = new SpotMapViewModel
+            {
+                TotalSpots = spots.Count,
+                FreeSpots = spotInfos.Count(s => !s.IsOutOfService && s.FreeUnits > 0),
+                Spots = spotInfos
+            };
+
+            return View(viewModel);
         }
 
         // GET: Parking/History
@@ -51,18 +128,16 @@ namespace GarageV3.Controllers
             }
 
             var historySessions = await _context.ParkingSessions
-                .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
                 .Include(ps => ps.Vehicle)
-                    .ThenInclude(v => v!.VehicleTypeRef)
+                    .ThenInclude(v => v.VehicleTypeRef)
                 .Include(ps => ps.ParkingSpot)
-                .OrderByDescending(ps => ps.ArriveTime)
+                .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
+                .OrderByDescending(ps => ps.CheckOutTime)
                 .Select(ps => new ParkingHistoryViewModel
                 {
                     SessionId = ps.Id,
                     RegistrationNumber = (ps.Vehicle != null && ps.Vehicle.RegistrationNumber != null) ? ps.Vehicle.RegistrationNumber : string.Empty,
                     VehicleTypeName = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.Name : "Unknown",
-                    VehicleTypeIcon = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.Icon : string.Empty,
-                    RequiredSpots = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.RequiredSpots : 1,
                     ParkingSpotId = (ps.ParkingSpot != null) ? ps.ParkingSpot.Id : -1,
                     ArrivalTime = ps.ArriveTime,
                     CheckOutTime = (ps.CheckOutTime != null) ? ps.CheckOutTime.Value : DateTime.MinValue,
@@ -75,58 +150,6 @@ namespace GarageV3.Controllers
             return View(historySessions);
         }
 
-        // GET: Parking/PrintReceipt
-        [HttpGet]
-        public async Task<IActionResult> PrintReceipt(int id)
-        {
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-            {
-                return Challenge();
-            }
-
-            var session = await _context.ParkingSessions
-                .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null)
-                .Include(ps => ps.Vehicle)
-                    .ThenInclude(v => v!.Owner)
-                .Include(ps => ps.Vehicle)
-                    .ThenInclude(v => v!.VehicleTypeRef)
-                .Include(ps => ps.ParkingSpot)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(ps => ps.Id == id);
-
-            if (session == null || session.Vehicle == null)
-            {
-                TempData["ErrorMessage"] = "Unable to print receipt. The parking session was not found or is not checked out yet.";
-                return RedirectToAction(nameof(History));
-            }
-            if (session.Vehicle.Owner == null || session.Vehicle.Owner.Id != currentUser.Id)
-            {
-                TempData["ErrorMessage"] = "You are not allowed to print others' receipt.";
-                return RedirectToAction(nameof(History));
-            }
-
-            var receiptViewModel = new ReceiptViewModel
-            {
-                OwnerEmail = session.Vehicle.Owner?.Email ?? "No Owner",
-                VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
-                RegistrationNumber = session.Vehicle.RegistrationNumber,
-                Brand = session.Vehicle.Brand,
-                Model = session.Vehicle.Model,
-                Color = session.Vehicle.Color,
-                NumberOfWheels = session.Vehicle.NumberOfWheels,
-                ParkingSpotId = session.ParkingSpot?.Id ?? -1,
-                ArrivalTime = session.ArriveTime,
-                CheckOutTime = session.CheckOutTime ?? DateTime.UtcNow,
-                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
-                TotalPrice = session.TotalPrice ?? 0,
-                AppliedDiscountPercentage = session.AppliedDiscountPercentage
-            };
-
-            TempData["Receipt"] = JsonSerializer.Serialize(receiptViewModel);
-
-            return RedirectToAction(nameof(Receipt), new { id });
-        }
 
         // GET: Parking/Park
         public async Task<IActionResult> Park(int? id)
@@ -136,7 +159,6 @@ namespace GarageV3.Controllers
             var viewModel = new ParkVehicleViewModel
             {
                 VehicleId = id ?? 0,
-
                 Vehicles = await BuildOwnedUnparkedVehiclesSelectListAsync(userId!),
                 ParkingSpots = await BuildParkingSpotsSelectListAsync()
             };
@@ -151,7 +173,6 @@ namespace GarageV3.Controllers
         {
             var userId = _userManager.GetUserId(User);
 
-            // TASK-06.5: server-side ownership + availability re-check
             var vehicle = await _context.Vehicles
                 .FirstOrDefaultAsync(v => v.Id == viewModel.VehicleId && v.OwnerId == userId);
 
@@ -170,37 +191,37 @@ namespace GarageV3.Controllers
                 }
             }
 
-            // TASK-06.6: server-side 18+ check, based on the owner's PersonalIdentityNumber
             var currentUser = await _userManager.FindByIdAsync(userId!);
             if (currentUser == null || !IsAtLeast18(currentUser.PersonalIdentityNumber))
             {
                 ModelState.AddModelError(string.Empty, "Vehicle owner must be at least 18 years old to park.");
             }
 
-            var spot = await _context.ParkingSpots
-                .FirstOrDefaultAsync(s => s.Id == viewModel.ParkingSpotId);
-
-            if (spot == null || spot.IsOutOfService)
+            if (viewModel.ParkingSpotId <= 0)
             {
-                ModelState.AddModelError(string.Empty, "Selected parking spot is not available.");
-            }
-            else
-            {
-                bool spotOccupied = await _context.ParkingSessions
-                    .AnyAsync(s => s.ParkingSpotId == spot.Id && s.CheckOutTime == null);
-
-                if (spotOccupied)
-                {
-                    ModelState.AddModelError(string.Empty, "Selected parking spot is already occupied.");
-                }
+                ModelState.AddModelError(string.Empty, "Please select a parking spot.");
             }
 
             if (ModelState.IsValid)
             {
-                await _parkingSessionService.StartSessionAsync(viewModel.ParkingSpotId, viewModel.VehicleId);
+                var result = await _parkingAllocationService.AllocateAndStartSessionAsync(
+                    viewModel.VehicleId, viewModel.ParkingSpotId, _settings.HourlyRate);
 
-                TempData["SuccessMessage"] = "Vehicle parked successfully.";
-                return RedirectToAction("Index", "MyVehicles");
+                if (result.Success)
+                {
+                    var spotNumbers = result.Allocations
+                        .Select(a => a.ParkingSpotId)
+                        .Distinct()
+                        .ToList();
+
+                    TempData["SuccessMessage"] = spotNumbers.Count > 1
+                        ? "Vehicle parked successfully across multiple spots."
+                        : "Vehicle parked successfully.";
+
+                    return RedirectToAction("Index", "MyVehicles");
+                }
+
+                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Could not park the vehicle.");
             }
 
             viewModel.Vehicles = await BuildOwnedUnparkedVehiclesSelectListAsync(userId!);
@@ -212,14 +233,7 @@ namespace GarageV3.Controllers
         // GET: Parking/CheckOut/5
         public async Task<IActionResult> CheckOut(int id)
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-            {
-                return Challenge();
-            }
-
             var session = await _context.ParkingSessions
-                .Where(ps => ps.CheckOutTime == null && ps.Vehicle != null)
                 .Include(ps => ps.Vehicle)
                     .ThenInclude(v => v.Owner)
                 .Include(ps => ps.Vehicle)
@@ -230,21 +244,17 @@ namespace GarageV3.Controllers
 
             if (session == null || session.Vehicle == null)
             {
-                TempData["ErrorMessage"] = "Unable to checkout. The parking session was not found or is already checked out.";
-                return RedirectToAction("Index", "MyVehicles");
+                return NotFound();
             }
 
-            var currentUserId = currentUser.Id;
+            var currentUserId = _userManager.GetUserId(User);
             bool isAdmin = User.IsInRole("Admin");
             bool isOwner = session.Vehicle.Owner?.Id == currentUserId;
-            bool isPro = currentUser.IsProMember;
 
             if (!isAdmin && !isOwner)
             {
-                return Forbid(); // Returns HTTP 403 Forbidden / Access Denied
+                return Forbid();
             }
-
-            var arriveTimeUtc = DateTime.SpecifyKind(session.ArriveTime, DateTimeKind.Utc);
 
             var viewModel = new CheckOutViewModel
             {
@@ -260,11 +270,8 @@ namespace GarageV3.Controllers
                 VehicleType = session.Vehicle.VehicleTypeRef,
                 VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
                 ParkingSpotId = session.ParkingSpot?.Id ?? -1,
-                CheckInTime = arriveTimeUtc,
-                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
-                IsProMember = isPro,
-                TotalPrice = _garageFeeService.CalculateFee(arriveTimeUtc, DateTime.UtcNow, session.HourlyRateAtCheckIn, isPro),
-                AppliedDiscountPercentage = isPro ? 0.20m : 0
+                CheckInTime = session.ArriveTime,
+                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn
             };
 
             return View(viewModel);
@@ -283,7 +290,7 @@ namespace GarageV3.Controllers
                 return RedirectToAction("Index", "MyVehicles");
             }
 
-            var returnCtrl = User.IsInRole("Admin") ? "AdminVehicles" : "MyVehicles";
+            await _parkingAllocationService.ReleaseAllocationsAsync(session.Id);
 
             var receiptViewModel = new ReceiptViewModel
             {
@@ -298,9 +305,7 @@ namespace GarageV3.Controllers
                 ArrivalTime = session.ArriveTime,
                 CheckOutTime = session.CheckOutTime ?? DateTime.UtcNow,
                 HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
-                TotalPrice = session.TotalPrice ?? 0,
-                AppliedDiscountPercentage = session.AppliedDiscountPercentage,
-                ReturnController = returnCtrl
+                TotalPrice = session.TotalPrice ?? 0
             };
 
             TempData["Receipt"] = JsonSerializer.Serialize(receiptViewModel);
@@ -310,22 +315,19 @@ namespace GarageV3.Controllers
             return RedirectToAction(nameof(Receipt), new { id = session.Id });
         }
 
-        // GET: Parking/Receipt/5
+        // GET: Parking/Receipt
         public IActionResult Receipt(int? id)
         {
-            if (TempData["Receipt"] is string jsonReceipt)
+            if (TempData["Receipt"] is not string json)
             {
-                var receiptVm = JsonSerializer.Deserialize<ReceiptViewModel>(jsonReceipt);
-                if (receiptVm != null)
-                {
-                    return View(receiptVm);
-                }
+                return RedirectToAction("Index", "MyVehicles");
             }
 
-            return RedirectToAction("Index", "MyVehicles");
+            var receipt = JsonSerializer.Deserialize<ReceiptViewModel>(json);
+
+            return View(receipt);
         }
 
-        // TASK-06.2: only the logged-in member's own, currently unparked vehicles
         private async Task<IEnumerable<SelectListItem>> BuildOwnedUnparkedVehiclesSelectListAsync(string userId)
         {
             var activeVehicleIds = _context.ParkingSessions
@@ -343,35 +345,40 @@ namespace GarageV3.Controllers
                 .ToListAsync();
         }
 
-        // TASK-06.3: shows every spot not out of service, greying out (disabling) occupied ones
-        // instead of hiding them, matching the pattern already used for VehicleType availability.
         private async Task<IEnumerable<SelectListItem>> BuildParkingSpotsSelectListAsync()
         {
-            var occupiedSpotIds = await _context.ParkingSessions
-                .Where(s => s.CheckOutTime == null)
-                .Select(s => s.ParkingSpotId)
-                .ToListAsync();
-
             var spots = await _context.ParkingSpots
                 .Where(s => !s.IsOutOfService)
                 .OrderBy(s => s.Number)
                 .ToListAsync();
 
+            var usedUnitsBySpot = await _context.ParkingAllocations
+                .Where(a => a.ParkingSession!.CheckOutTime == null)
+                .GroupBy(a => a.ParkingSpotId)
+                .Select(g => new { SpotId = g.Key, Used = g.Sum(a => a.UnitsUsed) })
+                .ToDictionaryAsync(x => x.SpotId, x => x.Used);
+
             return spots.Select(s =>
             {
-                bool isOccupied = occupiedSpotIds.Contains(s.Id);
+                int used = usedUnitsBySpot.GetValueOrDefault(s.Id, 0);
+                int free = s.CapacityUnits - used;
                 var label = s.Location != null ? $"#{s.Number} ({s.Location})" : $"#{s.Number}";
+
+                string statusText = free <= 0
+                    ? "Occupied"
+                    : used > 0
+                        ? $"{free}/{s.CapacityUnits} free"
+                        : "Free";
 
                 return new SelectListItem
                 {
                     Value = s.Id.ToString(),
-                    Text = isOccupied ? $"{label} (Occupied)" : label,
-                    Disabled = isOccupied
+                    Text = $"{label} ({statusText})",
+                    Disabled = free <= 0
                 };
             });
         }
 
-        // TASK-06.6: PersonalIdentityNumber format is YYYYMMDD-XXXX
         private static bool IsAtLeast18(string? personalIdentityNumber)
         {
             if (string.IsNullOrWhiteSpace(personalIdentityNumber) || personalIdentityNumber.Length < 8)

@@ -29,13 +29,9 @@ public class MyVehiclesController : Controller
     {
         var userId = _userManager.GetUserId(User);
 
-        var activeSessions = await _context.ParkingSessions
-        .Where(ps => ps.CheckOutTime == null)
-        .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.ParkingSpotId);
-
-        var activeSessionIds = await _context.ParkingSessions
-        .Where(ps => ps.CheckOutTime == null)
-        .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.Id);
+        var activeSessionSpots = _context.ParkingSessions
+            .Where(s => s.CheckOutTime == null)
+            .Select(s => new { s.VehicleId, s.ParkingSpotId });
 
         var vehicles = await _context.Vehicles
             .Where(v => v.OwnerId == userId)
@@ -51,10 +47,10 @@ public class MyVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
-
-                ParkingSpotId = activeSessions.ContainsKey(v.Id) ? activeSessions[v.Id] : (int?)null,
-
-                ActiveParkingSessionId = activeSessionIds.ContainsKey(v.Id) ? activeSessionIds[v.Id] : (int?)null
+                ParkingSpotId = activeSessionSpots
+                    .Where(s => s.VehicleId == v.Id)
+                    .Select(s => (int?)s.ParkingSpotId)
+                    .FirstOrDefault()
             })
             .ToListAsync();
 
@@ -150,6 +146,15 @@ public class MyVehiclesController : Controller
             .ToListAsync();
 
         return View(viewModel);
+    }
+
+    // GET/POST: MyVehicles/CheckDuplicate
+    [HttpGet]
+    [AcceptVerbs("GET", "POST")]
+    public async Task<IActionResult> CheckDuplicate(string registrationNumber, int? id)
+    {
+        bool isDuplicate = await _vehicleHandler.IsExistingAsync(registrationNumber, id);
+        return Json(!isDuplicate);
     }
 
     public async Task<IActionResult> Edit(int? id)
@@ -256,8 +261,8 @@ public class MyVehiclesController : Controller
         return View(vm);
     }
 
-// GET: MyVehicles/Delete/5
-public async Task<IActionResult> Delete(int? id)
+    // GET: MyVehicles/Delete/5
+    public async Task<IActionResult> Delete(int? id)
     {
         if (id == null)
         {
