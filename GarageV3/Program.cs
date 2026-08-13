@@ -37,6 +37,7 @@ builder.Services.Configure<GarageSettings>(
 builder.Services.AddScoped<IParkingSpotService, ParkingSpotService>();
 builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+builder.Services.AddScoped<IParkingAllocationService, ParkingAllocationService>();
 
 var app = builder.Build();
 

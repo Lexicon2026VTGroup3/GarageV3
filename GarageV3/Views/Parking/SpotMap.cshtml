@@ -1,0 +1,67 @@
+﻿@model GarageV3.ViewModels.Parking.SpotMapViewModel
+
+@{
+    ViewData["Title"] = "Spot Map";
+}
+
+<div class="container mt-4">
+    <div class="garage-header">
+        <h3>Spot Map</h3>
+    </div>
+
+    <div class="alert alert-info mt-3">
+        <strong>@Model.FreeSpots</strong> of <strong>@Model.TotalSpots</strong> parking spots free
+    </div>
+
+    <div class="spot-grid mt-4">
+        @foreach (var spot in Model.Spots)
+        {
+            string wrapperClass = spot.Position switch
+            {
+                "Left" => "spot-left",
+                "Middle" => "spot-middle",
+                "Right" => "spot-right",
+                _ => "spot-whole"
+            };
+
+            string tileClass = (spot.IsOutOfService || spot.FreeUnits <= 0) ? "spot-occupied" : "spot-free";
+
+            string? fillStyle = null;
+            if (!spot.IsOutOfService && spot.UsedUnits > 0 && spot.FreeUnits > 0 && spot.CapacityUnits > 0)
+            {
+                int usedPercent = (int)Math.Round(100.0 * spot.UsedUnits / spot.CapacityUnits);
+                fillStyle = $"background: linear-gradient(to right, var(--secondary-color-soft) {usedPercent}%, var(--free-spot-color) {usedPercent}%);";
+            }
+
+            string title = spot.IsOutOfService
+                ? "Out of service"
+                : spot.OccupyingRegistrationNumbers.Any()
+                    ? string.Join(", ", spot.OccupyingRegistrationNumbers)
+                    : "";
+
+            <div class="spot-gap @wrapperClass" title="@title">
+                <div class="spot-tile @tileClass" style="@fillStyle">
+                    <div class="spot-number">#@spot.SpotNumber</div>
+                    <div class="spot-status">
+                        @if (spot.IsOutOfService)
+                        {
+                            <text>Out of service</text>
+                        }
+                        else if (spot.FreeUnits <= 0)
+                        {
+                            <text>Occupied</text>
+                        }
+                        else if (spot.UsedUnits > 0)
+                        {
+                            <text>@spot.FreeUnits/@spot.CapacityUnits free</text>
+                        }
+                        else
+                        {
+                            <text>Free</text>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

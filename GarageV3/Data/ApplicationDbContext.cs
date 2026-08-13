@@ -31,6 +31,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<ParkingSession>()
             .Property(s => s.TotalPrice)
             .HasColumnType("decimal(10,2)");
+
+        builder.Entity<ParkingAllocation>()
+            .HasOne(a => a.ParkingSession)
+            .WithMany(s => s.Allocations)
+            .HasForeignKey(a => a.ParkingSessionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<ParkingAllocation>()
+            .HasOne(a => a.ParkingSpot)
+            .WithMany()
+            .HasForeignKey(a => a.ParkingSpotId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     public DbSet<ParkingSession> ParkingSessions { get; set; }
@@ -38,4 +50,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<VehicleTypeEntity> VehicleTypes { get; set; }
 
     public DbSet<ParkingSpot> ParkingSpots { get; set; }
+
+    public DbSet<ParkingAllocation> ParkingAllocations { get; set; }
 }

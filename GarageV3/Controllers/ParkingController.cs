@@ -1,5 +1,6 @@
 ﻿using GarageV3.Data;
 using GarageV3.Models.Entities;
+using GarageV3.Models.Parking;
 using GarageV3.Services.Interfaces;
 using GarageV3.ViewModels.Parking;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace GarageV3.Controllers
@@ -16,22 +18,103 @@ namespace GarageV3.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IParkingSessionService _parkingSessionService;
+        private readonly IParkingAllocationService _parkingAllocationService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly GarageSettings _settings;
 
         public ParkingController(
             ApplicationDbContext context,
             IParkingSessionService parkingSessionService,
-            UserManager<ApplicationUser> userManager)
+            IParkingAllocationService parkingAllocationService,
+            UserManager<ApplicationUser> userManager,
+            IOptions<GarageSettings> settings)
         {
             _context = context;
             _parkingSessionService = parkingSessionService;
+            _parkingAllocationService = parkingAllocationService;
             _userManager = userManager;
+            _settings = settings.Value;
         }
 
         // GET: /Parking
         public IActionResult Index()
         {
             return RedirectToAction("Index", "MyVehicles");
+        }
+
+        // GET: Parking/SpotMap
+        // Visual overview built on ParkingAllocation/CapacityUnits, so it
+        // correctly reflects shared and multi-spot vehicles (US12).
+        public async Task<IActionResult> SpotMap()
+        {
+            var spots = await _context.ParkingSpots
+                .OrderBy(s => s.Number)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var activeAllocations = await _context.ParkingAllocations
+                .Where(a => a.ParkingSession!.CheckOutTime == null)
+                .Include(a => a.ParkingSession)
+                    .ThenInclude(s => s!.Vehicle)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var usedUnitsBySpot = activeAllocations
+                .GroupBy(a => a.ParkingSpotId)
+                .ToDictionary(g => g.Key, g => g.Sum(a => a.UnitsUsed));
+
+            var regNumsBySpot = activeAllocations
+                .GroupBy(a => a.ParkingSpotId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(a => a.ParkingSession!.Vehicle?.RegistrationNumber ?? string.Empty)
+                          .Where(r => r != string.Empty)
+                          .Distinct()
+                          .ToList());
+
+            var spotIdToPosition = new Dictionary<int, string>();
+            var multiSpotSessions = activeAllocations
+                .GroupBy(a => a.ParkingSessionId)
+                .Where(g => g.Count() > 1);
+
+            foreach (var group in multiSpotSessions)
+            {
+                var orderedSpotIds = group
+                    .Select(a => a.ParkingSpotId)
+                    .Distinct()
+                    .Select(id => spots.First(s => s.Id == id))
+                    .OrderBy(s => s.Number)
+                    .Select(s => s.Id)
+                    .ToList();
+
+                for (int i = 0; i < orderedSpotIds.Count; i++)
+                {
+                    spotIdToPosition[orderedSpotIds[i]] =
+                        i == 0 ? "Left" :
+                        i == orderedSpotIds.Count - 1 ? "Right" :
+                        "Middle";
+                }
+            }
+
+            var spotInfos = spots.Select(s => new SpotMapSpotInfo
+            {
+                SpotNumber = s.Number,
+                Location = s.Location,
+                IsOutOfService = s.IsOutOfService,
+                CapacityUnits = s.CapacityUnits,
+                UsedUnits = usedUnitsBySpot.GetValueOrDefault(s.Id, 0),
+                OccupyingRegistrationNumbers = regNumsBySpot.GetValueOrDefault(s.Id, new List<string>()),
+                Position = spotIdToPosition.GetValueOrDefault(s.Id, "Whole")
+            }).ToList();
+
+            var viewModel = new SpotMapViewModel
+            {
+                TotalSpots = spots.Count,
+                FreeSpots = spotInfos.Count(s => !s.IsOutOfService && s.FreeUnits > 0),
+                Spots = spotInfos
+            };
+
+            return View(viewModel);
         }
 
         // GET: Parking/History
@@ -48,6 +131,8 @@ namespace GarageV3.Controllers
                 .Include(ps => ps.Vehicle)
                     .ThenInclude(v => v.VehicleTypeRef)
                 .Include(ps => ps.ParkingSpot)
+                .Include(ps => ps.Allocations)
+                    .ThenInclude(a => a.ParkingSpot)
                 .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
                 .OrderByDescending(ps => ps.CheckOutTime)
                 .Select(ps => new ParkingHistoryViewModel
@@ -89,7 +174,6 @@ namespace GarageV3.Controllers
         {
             var userId = _userManager.GetUserId(User);
 
-            // TASK-06.5: server-side ownership + availability re-check
             var vehicle = await _context.Vehicles
                 .FirstOrDefaultAsync(v => v.Id == viewModel.VehicleId && v.OwnerId == userId);
 
@@ -108,37 +192,45 @@ namespace GarageV3.Controllers
                 }
             }
 
-            // TASK-06.6: server-side 18+ check, based on the owner's PersonalIdentityNumber
             var currentUser = await _userManager.FindByIdAsync(userId!);
             if (currentUser == null || !IsAtLeast18(currentUser.PersonalIdentityNumber))
             {
                 ModelState.AddModelError(string.Empty, "Vehicle owner must be at least 18 years old to park.");
             }
 
-            var spot = await _context.ParkingSpots
-                .FirstOrDefaultAsync(s => s.Id == viewModel.ParkingSpotId);
-
-            if (spot == null || spot.IsOutOfService)
+            if (viewModel.ParkingSpotId <= 0)
             {
-                ModelState.AddModelError(string.Empty, "Selected parking spot is not available.");
-            }
-            else
-            {
-                bool spotOccupied = await _context.ParkingSessions
-                    .AnyAsync(s => s.ParkingSpotId == spot.Id && s.CheckOutTime == null);
-
-                if (spotOccupied)
-                {
-                    ModelState.AddModelError(string.Empty, "Selected parking spot is already occupied.");
-                }
+                ModelState.AddModelError(string.Empty, "Please select a parking spot.");
             }
 
             if (ModelState.IsValid)
             {
-                await _parkingSessionService.StartSessionAsync(viewModel.ParkingSpotId, viewModel.VehicleId);
+                // US12: allocation is capacity-based. A normal vehicle needs
+                // the whole spot's capacity, so this behaves like a plain
+                // single-spot pick. A motorcycle only needs part of a spot's
+                // capacity, so the chosen spot is accepted as long as it has
+                // room left. A large vehicle needs more capacity than one
+                // spot provides, so its chosen spot is used only as a
+                // starting hint — the service finds the actual contiguous
+                // spots automatically.
+                var result = await _parkingAllocationService.AllocateAndStartSessionAsync(
+                    viewModel.VehicleId, viewModel.ParkingSpotId, _settings.HourlyRate);
 
-                TempData["SuccessMessage"] = "Vehicle parked successfully.";
-                return RedirectToAction("Index", "MyVehicles");
+                if (result.Success)
+                {
+                    var spotNumbers = result.Allocations
+                        .Select(a => a.ParkingSpotId)
+                        .Distinct()
+                        .ToList();
+
+                    TempData["SuccessMessage"] = spotNumbers.Count > 1
+                        ? "Vehicle parked successfully across multiple spots."
+                        : "Vehicle parked successfully.";
+
+                    return RedirectToAction("Index", "MyVehicles");
+                }
+
+                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Could not park the vehicle.");
             }
 
             viewModel.Vehicles = await BuildOwnedUnparkedVehiclesSelectListAsync(userId!);
@@ -170,7 +262,7 @@ namespace GarageV3.Controllers
 
             if (!isAdmin && !isOwner)
             {
-                return Forbid(); // Returns HTTP 403 Forbidden / Access Denied
+                return Forbid();
             }
 
             var viewModel = new CheckOutViewModel
@@ -206,6 +298,12 @@ namespace GarageV3.Controllers
                 TempData["ErrorMessage"] = "Unable to checkout. The parking session was not found or is already checked out.";
                 return RedirectToAction("Index", "MyVehicles");
             }
+
+            // US12: checkout frees every allocation but keeps the history.
+            // Allocation rows are never deleted; a session stops counting as
+            // "active" (CheckOutTime set above), which is what frees its
+            // spots' capacity for future allocations.
+            await _parkingAllocationService.ReleaseAllocationsAsync(session.Id);
 
             var receiptViewModel = new ReceiptViewModel
             {
@@ -261,30 +359,35 @@ namespace GarageV3.Controllers
                 .ToListAsync();
         }
 
-        // TASK-06.3: shows every spot not out of service, greying out (disabling) occupied ones
-        // instead of hiding them, matching the pattern already used for VehicleType availability.
+        // TASK-06.3 / US12: shows every spot not out of service. A spot is
+        // disabled only once it has no free capacity units left at all — a
+        // spot partially used by e.g. one motorcycle still shows as pickable,
+        // with its remaining capacity in the label, so a second/third
+        // motorcycle can still choose it manually.
         private async Task<IEnumerable<SelectListItem>> BuildParkingSpotsSelectListAsync()
         {
-            var occupiedSpotIds = await _context.ParkingSessions
-                .Where(s => s.CheckOutTime == null)
-                .Select(s => s.ParkingSpotId)
-                .ToListAsync();
-
             var spots = await _context.ParkingSpots
                 .Where(s => !s.IsOutOfService)
                 .OrderBy(s => s.Number)
                 .ToListAsync();
 
+            var usedUnitsBySpot = await _context.ParkingAllocations
+                .Where(a => a.ParkingSession!.CheckOutTime == null)
+                .GroupBy(a => a.ParkingSpotId)
+                .Select(g => new { SpotId = g.Key, Used = g.Sum(a => a.UnitsUsed) })
+                .ToDictionaryAsync(x => x.SpotId, x => x.Used);
+
             return spots.Select(s =>
             {
-                bool isOccupied = occupiedSpotIds.Contains(s.Id);
+                int used = usedUnitsBySpot.GetValueOrDefault(s.Id, 0);
+                int free = s.CapacityUnits - used;
                 var label = s.Location != null ? $"#{s.Number} ({s.Location})" : $"#{s.Number}";
 
                 return new SelectListItem
                 {
                     Value = s.Id.ToString(),
-                    Text = isOccupied ? $"{label} (Occupied)" : label,
-                    Disabled = isOccupied
+                    Text = free <= 0 ? $"{label} (Occupied)" : $"{label} ({free}/{s.CapacityUnits} free)",
+                    Disabled = free <= 0
                 };
             });
         }
