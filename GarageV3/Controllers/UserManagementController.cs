@@ -11,15 +11,18 @@ namespace GarageV3.Controllers;
 [Authorize(Roles = "Admin")]
 public class UserManagementController : Controller
 {
+    private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
 
     public UserManagementController(
+        ApplicationDbContext context,
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager)
     {
+        _context = context;
         _userManager = userManager;
-        _roleManager = roleManager;
+        _roleManager = roleManager; 
     }
 
     // GET: UserManagement
@@ -45,6 +48,143 @@ public class UserManagementController : Controller
         return View(userList);
     }
 
+    // GET: UserManagement/Members Task 9
+    public async Task<IActionResult> Members(
+        string? search,
+        string vehicleFilter = "all",
+        string parkingFilter = "all")
+    {
+        var memberUsers = await _userManager.GetUsersInRoleAsync("Member");
+
+        var memberIds = memberUsers
+            .Select(user => user.Id)
+            .ToList();
+
+        var membersQuery = _context.Users
+            .Where(user => memberIds.Contains(user.Id));
+
+        // Search
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.Trim();
+
+            membersQuery = membersQuery.Where(user =>
+                EF.Functions.Like(user.FirstName, $"%{search}%") ||
+                EF.Functions.Like(user.LastName, $"%{search}%") ||
+                EF.Functions.Like(user.UserName ?? "", $"%{search}%") ||
+                EF.Functions.Like(user.Email ?? "", $"%{search}%") ||
+                EF.Functions.Like(user.PersonalIdentityNumber ?? "", $"%{search}%"));
+        }
+
+        // Vehicle filter
+        if (vehicleFilter == "withVehicles")
+        {
+            membersQuery = membersQuery.Where(user =>
+                _context.Vehicles.Any(vehicle =>
+                    vehicle.OwnerId == user.Id));
+        }
+        else if (vehicleFilter == "withoutVehicles")
+        {
+            membersQuery = membersQuery.Where(user =>
+                !_context.Vehicles.Any(vehicle =>
+                    vehicle.OwnerId == user.Id));
+        }
+
+        // Active parking filter
+        if (parkingFilter == "active")
+        {
+            membersQuery = membersQuery.Where(user =>
+                _context.ParkingSessions.Any(session =>
+                    session.Vehicle != null &&
+                    session.Vehicle.OwnerId == user.Id &&
+                    session.CheckOutTime == null));
+        }
+        else if (parkingFilter == "inactive")
+        {
+            membersQuery = membersQuery.Where(user =>
+                !_context.ParkingSessions.Any(session =>
+                    session.Vehicle != null &&
+                    session.Vehicle.OwnerId == user.Id &&
+                    session.CheckOutTime == null));
+        }
+        var members = await membersQuery
+            .Select(user => new MemberOverviewViewModel
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                UserName = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                PersonalIdentityNumber = user.PersonalIdentityNumber ?? string.Empty,
+
+                RegisteredVehiclesCount = _context.Vehicles
+                    .Count(vehicle => vehicle.OwnerId == user.Id),
+
+                ActiveParkingTotalCost = _context.ParkingSessions
+                    .Where(session =>
+                        session.Vehicle != null &&
+                        session.Vehicle.OwnerId == user.Id &&
+                        session.CheckOutTime == null)
+                    .Sum(session =>
+                        ((decimal)EF.Functions.DateDiffMinute(
+                            session.ArriveTime,
+                            DateTime.UtcNow
+                        ) / 60m) * session.HourlyRateAtCheckIn)
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        ViewData["Search"] = search;
+        ViewData["VehicleFilter"] = vehicleFilter;
+        ViewData["ParkingFilter"] = parkingFilter;
+
+        return View(members);
+    }
+    // GET: UserManagement/Details/{id} Task 9
+    public async Task<IActionResult> Details(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return NotFound();
+        }
+
+        var member = await _context.Users
+            .Where(user => user.Id == id)
+            .Select(user => new MemberDetailsViewModel
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                UserName = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                PersonalIdentityNumber = user.PersonalIdentityNumber ?? string.Empty,
+
+                Vehicles = _context.Vehicles
+                    .Where(vehicle => vehicle.OwnerId == user.Id)
+                    .Select(vehicle => new MemberVehicleViewModel
+                    {
+                        Id = vehicle.Id,
+                        RegistrationNumber = vehicle.RegistrationNumber,
+                        VehicleTypeName = vehicle.VehicleTypeRef != null
+                            ? vehicle.VehicleTypeRef.Name
+                            : "Unknown",
+                        Color = vehicle.Color,
+                        Brand = vehicle.Brand,
+                        Model = vehicle.Model,
+                        NumberOfWheels = vehicle.NumberOfWheels,
+                        ArrivalTime = vehicle.ArrivalTime,
+                        ParkingSpotNumber = vehicle.AssignedSpotNumber
+                    })
+                    .ToList()
+            })
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+
+        if (member == null)
+        {
+            return NotFound();
+        }
+
+        return View(member);
+    }
     // GET: UserManagement/EditRoles/5
     public async Task<IActionResult> EditRoles(string id)
     {
