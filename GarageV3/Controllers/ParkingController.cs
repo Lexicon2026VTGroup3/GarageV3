@@ -328,6 +328,59 @@ namespace GarageV3.Controllers
             return View(receipt);
         }
 
+        // GET: Parking/PrintReceipt
+        [HttpGet]
+        public async Task<IActionResult> PrintReceipt(int id)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Challenge();
+            }
+
+            var session = await _context.ParkingSessions
+                .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null)
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v!.Owner)
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v!.VehicleTypeRef)
+                .Include(ps => ps.ParkingSpot)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(ps => ps.Id == id);
+
+            if (session == null || session.Vehicle == null)
+            {
+                TempData["ErrorMessage"] = "Unable to print receipt. The parking session was not found or is not checked out yet.";
+                return RedirectToAction(nameof(History));
+            }
+            if (session.Vehicle.Owner == null || session.Vehicle.Owner.Id != currentUser.Id)
+            {
+                TempData["ErrorMessage"] = "You are not allowed to print others' receipt.";
+                return RedirectToAction(nameof(History));
+            }
+
+            var receiptViewModel = new ReceiptViewModel
+            {
+                OwnerEmail = session.Vehicle.Owner?.Email ?? "No Owner",
+                VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
+                RegistrationNumber = session.Vehicle.RegistrationNumber,
+                Brand = session.Vehicle.Brand,
+                Model = session.Vehicle.Model,
+                Color = session.Vehicle.Color,
+                NumberOfWheels = session.Vehicle.NumberOfWheels,
+                ParkingSpotId = session.ParkingSpot?.Id ?? -1,
+                ArrivalTime = session.ArriveTime,
+                CheckOutTime = session.CheckOutTime ?? DateTime.UtcNow,
+                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
+                TotalPrice = session.TotalPrice ?? 0,
+                AppliedDiscountPercentage = session.AppliedDiscountPercentage
+            };
+
+            TempData["Receipt"] = JsonSerializer.Serialize(receiptViewModel);
+
+            return RedirectToAction(nameof(Receipt), new { id });
+        }
+
         private async Task<IEnumerable<SelectListItem>> BuildOwnedUnparkedVehiclesSelectListAsync(string userId)
         {
             var activeVehicleIds = _context.ParkingSessions

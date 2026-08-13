@@ -22,38 +22,6 @@
 }
 
 <div class="container mt-4">
-    @* <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
-        <form asp-action="History" method="get" class="d-flex align-items-center m-0">
-            <div class="input-group">
-                <input type="text"
-                    id="searchBox"
-                    name="searchString"
-                    class="form-control"
-                    placeholder="Search text"
-                    value="@Context.Request.Query["searchString"]"
-                    autofocus
-                />
-                <input type="text"
-                    id="searchTimeBox"
-                    name="searchTime"
-                    class="form-control"
-                    placeholder="Search Time"
-                    value="@Context.Request.Query["searchTime"]"
-                />
-
-                <button type="submit" class="btn sv-btn-create">Search</button>
-
-                @if (!string.IsNullOrEmpty(ViewData["CurrentFilter"] as string) ||
-                    !string.IsNullOrEmpty(ViewData["CurrentTimeFilter"] as string))
-                {
-                    <a asp-action="History"
-                       class="btn sv-badge-sm text-dark py-0 d-inline-flex align-items-center fs-6">
-                        Clear
-                    </a>
-                }
-            </div>
-        </form>
-    </div> *@
 
     @if (!Model.Any())
     {

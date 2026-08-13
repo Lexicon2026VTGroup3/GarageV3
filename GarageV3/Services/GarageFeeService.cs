@@ -18,25 +18,28 @@ public class GarageFeeService
 
         if (end <= start) return 0m;
 
-        decimal totalFee = 0m;
-        var currentTime = start;
+        decimal durationInHours = (decimal)(end - start).TotalHours;
+        decimal totalFee = durationInHours * hourlyRate;
 
-        while (currentTime < end)
-        {
-            if (currentTime.DayOfWeek != DayOfWeek.Sunday)
-            {
-                if (currentTime.Hour >= 6 && currentTime.Hour < 20)
-                {
-                    totalFee += hourlyRate / 60m;
-                }
-                else
-                {
-                    totalFee += 2m / 60m;
-                }
-            }
+        //decimal totalFee = 0m;
+        //var currentTime = start;
 
-            currentTime = currentTime.AddMinutes(1);
-        }
+        //while (currentTime < end)
+        //{
+        //    if (currentTime.DayOfWeek != DayOfWeek.Sunday)
+        //    {
+        //        if (currentTime.Hour >= 6 && currentTime.Hour < 20)
+        //        {
+        //            totalFee += hourlyRate / 60m;
+        //        }
+        //        else
+        //        {
+        //            totalFee += 2m / 60m;
+        //        }
+        //    }
+
+        //    currentTime = currentTime.AddMinutes(1);
+        //}
 
         return Math.Round(totalFee, 2);
     }
