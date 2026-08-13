@@ -1,11 +1,17 @@
 ﻿using GarageV3.Data;
 using GarageV3.Models.Parking;
+using Microsoft.Extensions.Options;
 
 namespace GarageV3.Services;
 
 public class GarageFeeService
 {
-    private const decimal ProDiscountPercentage = 0.20m; // 20% discount for Pro-members
+    private readonly decimal _proDiscountPercentage;
+
+    public GarageFeeService(IOptions<GarageSettings> garageSettings)
+    {
+        _proDiscountPercentage = garageSettings.Value.ProDiscountRate;
+    }
 
     public decimal CalculateRawFee(DateTime arrivalTime, DateTime departureTime, decimal hourlyRate)
     {
@@ -50,7 +56,7 @@ public class GarageFeeService
 
         if (isProMember)
         {
-            totalFee *= (1m - ProDiscountPercentage);
+            totalFee *= (1m - _proDiscountPercentage);
         }
 
         return Math.Round(totalFee, 2);
@@ -70,12 +76,12 @@ public class GarageFeeService
             };
         }
 
-        decimal finalFee = Math.Round(grossFee * (1m - ProDiscountPercentage), 2);
+        decimal finalFee = Math.Round(grossFee * (1m - _proDiscountPercentage), 2);
 
         return new FeeCalculationResult
         {
             GrossFee = grossFee,
-            DiscountPercentage = ProDiscountPercentage,
+            DiscountPercentage = _proDiscountPercentage,
             TotalPrice = finalFee
         };
     }
