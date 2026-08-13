@@ -39,9 +39,9 @@ public class AdminVehiclesController : Controller
             query = query.Where(v => v.Owner != null && v.Owner.Email != null && v.Owner.Email.Contains(searchQuery));
         }
 
-        var activeSessionSpots = _context.ParkingSessions
+        var activeSessions = _context.ParkingSessions
             .Where(s => s.CheckOutTime == null)
-            .Select(s => new { s.VehicleId, s.ParkingSpotId });
+            .Select(s => new { s.Id, s.VehicleId, s.ParkingSpotId });
 
         var vehicleItems = await query
             .Select(v => new AdminVehiclesIndexViewModel
@@ -54,10 +54,17 @@ public class AdminVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
-                ParkingSpotId = activeSessionSpots
+
+                ActiveParkingSessionId = activeSessions
+                    .Where(s => s.VehicleId == v.Id)
+                    .Select(s => (int?)s.Id)
+                    .FirstOrDefault(),
+
+                ParkingSpotId = activeSessions
                     .Where(s => s.VehicleId == v.Id)
                     .Select(s => (int?)s.ParkingSpotId)
                     .FirstOrDefault(),
+
                 OwnerEmail = v.Owner != null ? v.Owner.Email! : "No Email"
             })
             .ToListAsync();
