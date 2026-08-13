@@ -1,4 +1,4 @@
-﻿@model GarageV3.Models.ViewModels.ParkingOverviewViewModel
+﻿@model GarageV3.ViewModels.ParkingOverviewViewModel
 
 <div class="alert alert-info mt-3">
     <strong>@Model.FreeSpotCount</strong> of <strong>@Model.TotalSpots</strong> parking spots free
@@ -44,7 +44,7 @@
                 <div class="spot-number">#@spot.SpotNumber</div>
 
                 <div class="spot-status">
-                    @spot.OccupyingVehicleType.GetDisplayIcon()
+                    @spot.OccupyingVehicleType?.GetDisplayIcon()
 
                     @(isMotorcycleShared ? $"{spot.MotorcycleSlotsUsed}/3" :
                         isBicycleShared ? $"{spot.BicycleSlotsUsed}/5" :

@@ -12,6 +12,8 @@ namespace GarageV3.Models.Parking
 
         public bool IsFree { get; set; }
 
+        public int? OccupyingVehicleTypeEntityId { get; set; }
+
         /// <summary>
         /// Set when a non-motorcycle vehicle occupies this spot
         /// (possibly spanning into following spot numbers).
@@ -19,7 +21,7 @@ namespace GarageV3.Models.Parking
         public VehicleType? OccupyingVehicleType { get; set; }
 
         public int? OccupyingVehicleId { get; set; }
-        public string[] OccupyingVehicleRegNums { get; set; }
+        public string[]? OccupyingVehicleRegNums { get; set; }
 
         /// <summary>
         /// How many of the motorcycle slots (0-3) on this spot are currently used.

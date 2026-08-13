@@ -62,13 +62,21 @@ public class ForgotPasswordModel : PageModel
 
             // For more information on how to enable account confirmation and password reset please
             // visit https://go.microsoft.com/fwlink/?LinkID=532713
-            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            // var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+            //code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            //var callbackUrl = Url.Page(
+            //    "/Account/ResetPassword",
+            //    pageHandler: null,
+            //    values: new { area = "Identity", code },
+            //    protocol: Request.Scheme)!;
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
             var callbackUrl = Url.Page(
                 "/Account/ResetPassword",
                 pageHandler: null,
-                values: new { area = "Identity", code },
-                protocol: Request.Scheme)!;
+                values: new { token, email = user.Email },
+                protocol: Request.Scheme) ?? "Cannot generate reset password link!";
 
             await _emailSender.SendEmailAsync(
                 Input.Email,
@@ -80,4 +88,5 @@ public class ForgotPasswordModel : PageModel
 
         return Page();
     }
+
 }

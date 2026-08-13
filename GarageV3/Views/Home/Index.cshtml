@@ -1,0 +1,48 @@
+﻿@model GarageV3.ViewModels.HomeViewModel
+
+@{
+    ViewData["Title"] = "Garage3";
+}
+
+<div class="container mt-4">
+    <div class="garage-header">
+        <h3>Welcome to Garage3</h3>
+    </div>
+
+    <div class="row mt-4 g-3">
+        <div class="col-md-4">
+            <div class="card sv-card p-3 text-center">
+                <div class="sv-label">Free Spots</div>
+                <div class="fs-3 fw-bold">@Model.FreeSpots</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card sv-card p-3 text-center">
+                <div class="sv-label">Occupied Spots</div>
+                <div class="fs-3 fw-bold">@Model.OccupiedSpots</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card sv-card p-3 text-center">
+                <div class="sv-label">Out of Service</div>
+                <div class="fs-3 fw-bold">@Model.OutOfServiceSpots</div>
+            </div>
+        </div>
+    </div>
+
+    <p class="text-muted mt-3">@Model.TotalSpots parking spots in total.</p>
+
+    @if (!User.Identity!.IsAuthenticated)
+    {
+        <div class="mt-4">
+            <a asp-area="Identity" asp-page="/Account/Login" class="btn garage-btn">Log in</a>
+            <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-secondary">Register</a>
+        </div>
+    }
+    else
+    {
+        <div class="mt-4">
+            <a asp-controller="Parking" asp-action="Park" class="btn garage-btn">Park a Vehicle</a>
+        </div>
+    }
+</div>

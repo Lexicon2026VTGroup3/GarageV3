@@ -1,0 +1,54 @@
+﻿@model IEnumerable<GarageV3.ViewModels.UserManagement.UserListViewModel>
+
+@{
+    ViewData["Title"] = "User & Role Administration";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div id="successAlert" class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<div class="container mt-4">
+    <div class="garage-header">
+        <h3>User & Role Administration</h3>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover sv-table align-middle mt-4">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>PIN</th>
+                    <th>Roles</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.UserName</td>
+                        <td>@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>@user.PersonalIdentityNumber</td>
+                        <td>@string.Join(", ", user.Roles)</td>
+                        <td>
+                            <a asp-action="EditRoles" asp-route-id="@user.Id" class="btn btn-sm btn-primary">Manage Roles</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        fadeOutSuccessAlert();
+    </script>
+}

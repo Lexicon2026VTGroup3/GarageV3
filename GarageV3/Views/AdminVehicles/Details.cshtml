@@ -1,0 +1,37 @@
+﻿@model GarageV3.ViewModels.AdminVehiclesIndexViewModel
+
+@{
+    ViewData["Title"] = "Admin Vehicle Details";
+}
+
+<div class="container">
+    <div class="col-md-8 mx-auto">
+        <div class="garage-header">
+            <h3>Vehicle Details (Admin)</h3>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <div class="card sv-card mt-3">
+                    <div class="sv-flag-bar"></div>
+
+                    <div class="card-body p-4">
+                        @await Html.PartialAsync("_VehicleDetailsPartial", Model)
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="sv-back-link">
+                                &larr; Back
+                            </a>
+
+                            <a asp-action="Edit" asp-route-id="@Model?.Id" class="sv-back-link">
+                                Edit &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

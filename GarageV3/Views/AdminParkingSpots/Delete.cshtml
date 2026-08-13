@@ -1,0 +1,59 @@
+﻿@model GarageV3.ViewModels.AdminParkingSpotViewModel
+
+@{
+    ViewData["Title"] = "Delete Parking Spot";
+}
+
+<div class="container mt-5">
+    <div class="col-md-6 mx-auto">
+        <div class="garage-header">
+            <h3 class="text-danger">Delete Parking Spot</h3>
+        </div>
+
+        <div class="card sv-card p-4 shadow-sm">
+            <div class="sv-flag-bar"></div>
+
+            <dl class="row my-3">
+                <dt class="col-sm-4 sv-label">Spot Number</dt>
+                <dd class="col-sm-8"><strong>#@Model.Number</strong></dd>
+
+                <dt class="col-sm-4 sv-label">Location</dt>
+                <dd class="col-sm-8">
+                    @if (string.IsNullOrEmpty(Model.Location))
+                    {
+                        <span class="text-muted fst-italic">No location specified</span>
+                    }
+                    else
+                    {
+                        <span>@Model.Location</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-4 sv-label">Status</dt>
+                <dd class="col-sm-8">
+                    @if (Model.IsOutOfService)
+                    {
+                        <span class="badge bg-danger">Ur funktion (Out of Service)</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                </dd>
+            </dl>
+
+            <hr class="my-3" />
+
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+
+                <h4 class="garage-header text-danger mb-4">Are you sure you want to delete this parking spot?</h4>
+
+                <div class="d-flex gap-4">
+                    <button type="submit" class="btn btn-danger w-50">Delete</button>
+                    <a asp-action="Index" class="btn btn-secondary w-50">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

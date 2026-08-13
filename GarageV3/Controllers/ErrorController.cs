@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using GarageV3.Models.ViewModels;
+using GarageV3.ViewModels;
 
 public class ErrorController : Controller
 {

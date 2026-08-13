@@ -1,0 +1,128 @@
+@using GarageV3.Helpers
+
+@model GarageV3.ViewModels.Parking.CheckOutViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+
+    var vehicleTypeName = Model.VehicleType?.Name ?? "Unknown";
+    var badgeColor = VehicleTypeHelper.GetBadgeColor(vehicleTypeName);
+    var badgeTextColor = VehicleTypeHelper.GetBadgeTextColor(vehicleTypeName);
+}
+
+<div class="container">
+    <div class="col-md-8 mx-auto">
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">
+                <div>@TempData["ErrorMessage"]</div>
+                <button type="button" class="btn-close position-relative p-0" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="garage-header">
+            <h3>@Model.Title</h3>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <div class="card sv-card mt-3">
+                    <div class="sv-flag-bar"></div>
+
+                    <div class="card-body p-4">
+                        @Html.HiddenFor(m => m.ParkingSessionId)
+                        @Html.HiddenFor(m => m.CheckInTime)
+
+                        <div class="alert alert-info">
+                            <div class="mb-2">
+                                <strong>Checked In Time:</strong>
+                                <span class ="local-time-display" data-utc='@Model.CheckInTime.ToString("o")'>
+                                    @Model.CheckInTime.ToString("dddd, yyyy-MM-dd HH:mm") UTC
+                                </span>
+                            </div>
+
+                            <div class="parked-duration">
+                                <strong>Parked Duration: </strong>
+                                <span class="duration-cell"
+                                      data-arrival-time='@DateTime.SpecifyKind(Model.CheckInTime, DateTimeKind.Utc).ToString("o")'>
+                                </span>
+                            </div>
+
+                            @if (Model.IsProMember)
+                            {
+                                <div class="parked-duration text-danger">
+                                    <strong>Pro-discount: </strong>
+                                    <span>
+                                        <strong>-@((Model.AppliedDiscountPercentage * 100).ToString("0"))%</strong>
+                                    </span>
+                                </div>
+                            }
+
+                            <div class="parked-duration">
+                                <strong>Total Price: </strong>
+                                <span class="total-price-cell"
+                                      data-arrival-time='@DateTime.SpecifyKind(Model.CheckInTime, DateTimeKind.Utc).ToString("o")'
+                                      data-hourly-rate='@Model.HourlyRateAtCheckIn.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)'
+                                      data-is-pro='@Model.IsProMember.ToString().ToLower()'>
+                                    @Model.TotalPrice.ToString("F2") kr
+                                </span>
+                            </div>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <div class="mb-3">
+                            <h4 class="m-2 mt-0">@Model.RegistrationNumber</h4>
+                            <span class="sv-badge" style="background-color:@badgeColor; color:@badgeTextColor;">
+                                @vehicleTypeName
+                            </span>
+                        </div>
+
+                        <dl class="row mb-0 gy-2">
+                            <dt class="col-5 sv-label">Color</dt>
+                            <dd class="col-7 mb-0">@Model.Color</dd>
+
+                            <dt class="col-5 sv-label">Brand</dt>
+                            <dd class="col-7 mb-0">@Model.Brand</dd>
+
+                            <dt class="col-5 sv-label">Model</dt>
+                            <dd class="col-7 mb-0">@Model.Model</dd>
+
+                            <dt class="col-5 sv-label">Wheels</dt>
+                            <dd class="col-7 mb-0">@Model.NumberOfWheels</dd>
+
+                            <dt class="col-5 sv-label">Parking Spot</dt>
+                            <dd class="col-7 mb-0">@SpotHelper.GetSpotDisplay(Model.ParkingSpotId, vehicleTypeName)</dd>
+
+                            <dt class="col-5 sv-label">Hourly Rate</dt>
+                            <dd class="col-7 mb-0">@Model.HourlyRateAtCheckIn.ToString("C")</dd>
+                        </dl>
+
+                        <hr class="my-3" />
+
+                        <form asp-action="CheckOut" method="post">
+                            <input type="hidden" asp-for="ParkingSessionId" />
+                            <input type="hidden" asp-for="CheckInTime" />
+
+                            <h4 class="garage-header text-danger">Are you sure you want to check out this vehicle?</h4>
+
+                            <div class="mt-4 d-flex gap-4">
+                                <button type="submit"
+                                        class="btn btn-danger w-50">
+                                    Check Out
+                                </button>
+
+                                <a asp-action="Park"
+                                   class="btn btn-secondary w-50">
+                                    Cancel
+                                </a>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
