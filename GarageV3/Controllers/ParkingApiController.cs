@@ -1,5 +1,6 @@
 ﻿using GarageV3.Data;
 using GarageV3.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace GarageV3.Controllers;
 
 [ApiController]
 [Route("api/parking")]
+[Authorize]
 public class ParkingApiController : ControllerBase
 {
     private readonly GarageFeeService _garageFeeService;
