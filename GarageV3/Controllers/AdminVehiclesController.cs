@@ -39,19 +39,9 @@ public class AdminVehiclesController : Controller
             query = query.Where(v => v.Owner != null && v.Owner.Email != null && v.Owner.Email.Contains(searchQuery));
         }
 
-<<<<<<< HEAD
         var activeSessionSpots = _context.ParkingSessions
             .Where(s => s.CheckOutTime == null)
             .Select(s => new { s.VehicleId, s.ParkingSpotId });
-=======
-        var activeSessions = await _context.ParkingSessions
-        .Where(ps => ps.CheckOutTime == null)
-        .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.ParkingSpotId);
-
-        var activeSessionIds = await _context.ParkingSessions
-            .Where(ps => ps.CheckOutTime == null)
-            .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.Id);
->>>>>>> devTest
 
         var vehicleItems = await query
             .Select(v => new AdminVehiclesIndexViewModel
@@ -64,17 +54,10 @@ public class AdminVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
-<<<<<<< HEAD
                 ParkingSpotId = activeSessionSpots
                     .Where(s => s.VehicleId == v.Id)
                     .Select(s => (int?)s.ParkingSpotId)
                     .FirstOrDefault(),
-=======
-
-                ParkingSpotId = activeSessions.ContainsKey(v.Id) ? activeSessions[v.Id] : (int?)null,
-                ActiveParkingSessionId = activeSessionIds.ContainsKey(v.Id) ? activeSessionIds[v.Id] : (int?)null,
-
->>>>>>> devTest
                 OwnerEmail = v.Owner != null ? v.Owner.Email! : "No Email"
             })
             .ToListAsync();

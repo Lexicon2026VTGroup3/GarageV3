@@ -29,19 +29,9 @@ public class MyVehiclesController : Controller
     {
         var userId = _userManager.GetUserId(User);
 
-<<<<<<< HEAD
         var activeSessionSpots = _context.ParkingSessions
             .Where(s => s.CheckOutTime == null)
             .Select(s => new { s.VehicleId, s.ParkingSpotId });
-=======
-        var activeSessions = await _context.ParkingSessions
-        .Where(ps => ps.CheckOutTime == null)
-        .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.ParkingSpotId);
-
-        var activeSessionIds = await _context.ParkingSessions
-        .Where(ps => ps.CheckOutTime == null)
-        .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.Id);
->>>>>>> devTest
 
         var vehicles = await _context.Vehicles
             .Where(v => v.OwnerId == userId)
@@ -57,17 +47,10 @@ public class MyVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
-<<<<<<< HEAD
                 ParkingSpotId = activeSessionSpots
                     .Where(s => s.VehicleId == v.Id)
                     .Select(s => (int?)s.ParkingSpotId)
                     .FirstOrDefault()
-=======
-
-                ParkingSpotId = activeSessions.ContainsKey(v.Id) ? activeSessions[v.Id] : (int?)null,
-
-                ActiveParkingSessionId = activeSessionIds.ContainsKey(v.Id) ? activeSessionIds[v.Id] : (int?)null
->>>>>>> devTest
             })
             .ToListAsync();
 
@@ -166,8 +149,6 @@ public class MyVehiclesController : Controller
     }
 
     // GET/POST: MyVehicles/CheckDuplicate
-    // Used by the [Remote] validation attribute on RegistrationNumber
-    // in ParkedVehicleFormViewModel.
     [HttpGet]
     [AcceptVerbs("GET", "POST")]
     public async Task<IActionResult> CheckDuplicate(string registrationNumber, int? id)
