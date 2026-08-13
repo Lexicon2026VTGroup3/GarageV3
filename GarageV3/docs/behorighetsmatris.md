@@ -20,7 +20,7 @@ controllers/actions i systemet.
 
 Följande actions hämtar en resurs via ett ID som skickas från klienten
 (URL eller formulär), och måste därför verifiera ägarskap **efter** hämtning
-— annars kan ett medlem manipulera ett ID i URL:en för att komma åt någon
+annars kan ett medlem manipulera ett ID i URL:en för att komma åt någon
 annans data:
 
 | Action | Kontroll |
