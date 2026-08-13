@@ -29,9 +29,9 @@ public class MyVehiclesController : Controller
     {
         var userId = _userManager.GetUserId(User);
 
-        var activeSessionSpots = _context.ParkingSessions
+        var activeSessions = _context.ParkingSessions
             .Where(s => s.CheckOutTime == null)
-            .Select(s => new { s.VehicleId, s.ParkingSpotId });
+            .Select(s => new { s.Id, s.VehicleId, s.ParkingSpotId });
 
         var vehicles = await _context.Vehicles
             .Where(v => v.OwnerId == userId)
@@ -47,10 +47,14 @@ public class MyVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
-                ParkingSpotId = activeSessionSpots
+                ParkingSpotId = activeSessions
                     .Where(s => s.VehicleId == v.Id)
                     .Select(s => (int?)s.ParkingSpotId)
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
+                ActiveParkingSessionId = activeSessions
+                    .Where(s => s.VehicleId == v.Id)
+                    .Select(s => (int?)s.Id)
+                    .FirstOrDefault() ?? 0
             })
             .ToListAsync();
 
