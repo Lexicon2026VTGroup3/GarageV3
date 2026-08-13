@@ -19,6 +19,7 @@ namespace GarageV3.Helpers
                 : $"#{start}";
         }
 
+        // Display parking spot range based on DB VehicleType.RequiredSpots
         public static string GetSpotDisplay(int? assignedSpotNumber, int requiredSpots)
         {
             if (!assignedSpotNumber.HasValue)

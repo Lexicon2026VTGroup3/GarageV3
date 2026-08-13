@@ -1,6 +1,5 @@
 ﻿using GarageV3.Data;
 using GarageV3.Models.Entities;
-using GarageV3.Models.Parking;
 using GarageV3.Services.Interfaces;
 using GarageV3.ViewModels.Parking;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace GarageV3.Controllers
 {
@@ -43,8 +45,6 @@ namespace GarageV3.Controllers
         }
 
         // GET: Parking/SpotMap
-        // Visual overview built on ParkingAllocation/CapacityUnits, so it
-        // correctly reflects shared and multi-spot vehicles (US12).
         public async Task<IActionResult> SpotMap()
         {
             var spots = await _context.ParkingSpots
@@ -152,12 +152,13 @@ namespace GarageV3.Controllers
 
 
         // GET: Parking/Park
-        public async Task<IActionResult> Park()
+        public async Task<IActionResult> Park(int? id)
         {
             var userId = _userManager.GetUserId(User);
 
             var viewModel = new ParkVehicleViewModel
             {
+                VehicleId = id ?? 0,
                 Vehicles = await BuildOwnedUnparkedVehiclesSelectListAsync(userId!),
                 ParkingSpots = await BuildParkingSpotsSelectListAsync()
             };
@@ -203,14 +204,6 @@ namespace GarageV3.Controllers
 
             if (ModelState.IsValid)
             {
-                // US12: allocation is capacity-based. A normal vehicle needs
-                // the whole spot's capacity, so this behaves like a plain
-                // single-spot pick. A motorcycle only needs part of a spot's
-                // capacity, so the chosen spot is accepted as long as it has
-                // room left. A large vehicle needs more capacity than one
-                // spot provides, so its chosen spot is used only as a
-                // starting hint — the service finds the actual contiguous
-                // spots automatically.
                 var result = await _parkingAllocationService.AllocateAndStartSessionAsync(
                     viewModel.VehicleId, viewModel.ParkingSpotId, _settings.HourlyRate);
 
@@ -297,10 +290,6 @@ namespace GarageV3.Controllers
                 return RedirectToAction("Index", "MyVehicles");
             }
 
-            // US12: checkout frees every allocation but keeps the history.
-            // Allocation rows are never deleted; a session stops counting as
-            // "active" (CheckOutTime set above), which is what frees its
-            // spots' capacity for future allocations.
             await _parkingAllocationService.ReleaseAllocationsAsync(session.Id);
 
             var receiptViewModel = new ReceiptViewModel
@@ -327,7 +316,7 @@ namespace GarageV3.Controllers
         }
 
         // GET: Parking/Receipt
-        public IActionResult Receipt()
+        public IActionResult Receipt(int? id)
         {
             if (TempData["Receipt"] is not string json)
             {
@@ -339,7 +328,6 @@ namespace GarageV3.Controllers
             return View(receipt);
         }
 
-        // TASK-06.2: only the logged-in member's own, currently unparked vehicles
         private async Task<IEnumerable<SelectListItem>> BuildOwnedUnparkedVehiclesSelectListAsync(string userId)
         {
             var activeVehicleIds = _context.ParkingSessions
@@ -357,11 +345,6 @@ namespace GarageV3.Controllers
                 .ToListAsync();
         }
 
-        // TASK-06.3 / US12: shows every spot not out of service. A spot is
-        // disabled only once it has no free capacity units left at all. A
-        // fully free spot just shows "Free"; a partially used spot (e.g. one
-        // motorcycle sharing it) shows its remaining capacity so a second or
-        // third motorcycle can still choose it manually.
         private async Task<IEnumerable<SelectListItem>> BuildParkingSpotsSelectListAsync()
         {
             var spots = await _context.ParkingSpots
@@ -396,7 +379,6 @@ namespace GarageV3.Controllers
             });
         }
 
-        // TASK-06.6: PersonalIdentityNumber format is YYYYMMDD-XXXX
         private static bool IsAtLeast18(string? personalIdentityNumber)
         {
             if (string.IsNullOrWhiteSpace(personalIdentityNumber) || personalIdentityNumber.Length < 8)

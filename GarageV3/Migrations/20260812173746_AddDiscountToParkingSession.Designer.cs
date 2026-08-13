@@ -4,6 +4,7 @@ using GarageV3.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GarageV3.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260812173746_AddDiscountToParkingSession")]
+    partial class AddDiscountToParkingSession
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,32 +117,6 @@ namespace GarageV3.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("GarageV3.Models.Entities.ParkingAllocation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ParkingSessionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ParkingSpotId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UnitsUsed")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParkingSessionId");
-
-                    b.HasIndex("ParkingSpotId");
-
-                    b.ToTable("ParkingAllocations");
-                });
-
             modelBuilder.Entity("GarageV3.Models.Entities.ParkingSession", b =>
                 {
                     b.Property<int>("Id")
@@ -186,9 +163,6 @@ namespace GarageV3.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CapacityUnits")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsOutOfService")
                         .HasColumnType("bit");
 
@@ -217,6 +191,9 @@ namespace GarageV3.Migrations
 
                     b.Property<DateTime>("ArrivalTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("AssignedSpotNumber")
+                        .HasColumnType("int");
 
                     b.Property<string>("Brand")
                         .IsRequired()
@@ -286,9 +263,6 @@ namespace GarageV3.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("RequiredSpaceUnits")
-                        .HasColumnType("int");
 
                     b.Property<int>("RequiredSpots")
                         .HasColumnType("int");
@@ -443,25 +417,6 @@ namespace GarageV3.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("GarageV3.Models.Entities.ParkingAllocation", b =>
-                {
-                    b.HasOne("GarageV3.Models.Entities.ParkingSession", "ParkingSession")
-                        .WithMany("Allocations")
-                        .HasForeignKey("ParkingSessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GarageV3.Models.Entities.ParkingSpot", "ParkingSpot")
-                        .WithMany()
-                        .HasForeignKey("ParkingSpotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ParkingSession");
-
-                    b.Navigation("ParkingSpot");
-                });
-
             modelBuilder.Entity("GarageV3.Models.Entities.ParkingSession", b =>
                 {
                     b.HasOne("GarageV3.Models.Entities.ParkingSpot", "ParkingSpot")
@@ -549,11 +504,6 @@ namespace GarageV3.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("GarageV3.Models.Entities.ParkingSession", b =>
-                {
-                    b.Navigation("Allocations");
                 });
 #pragma warning restore 612, 618
         }

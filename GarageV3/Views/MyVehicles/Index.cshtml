@@ -10,6 +10,13 @@
         @TempData["SuccessMessage"]
     </div>
 }
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">
+        <div>@TempData["ErrorMessage"]</div>
+        <button type="button" class="btn-close position-relative p-0" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
@@ -19,6 +26,22 @@
             Register New Vehicle
         </a>
     </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
     @if (!Model.Any())
     {
@@ -54,6 +77,14 @@
                             <td>@item.Color</td>
                             <td>@(item.ParkingSpotId.HasValue ? item.ParkingSpotId.ToString() : "Not assigned")</td>
                             <td class="text-end">
+                                @if (!item.ParkingSpotId.HasValue)
+                                {
+                                    <a asp-controller="Parking" asp-action="Park" asp-route-id="@item.Id" class="btn btn-success sv-action-btn w-sm-auto">Park</a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Parking" asp-action="CheckOut" asp-route-id="@item.ActiveParkingSessionId" class="btn btn-warning sv-action-btn w-sm-auto">Check Out</a>
+                                }
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Details</a>
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Edit</a>
                                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger sv-action-btn w-sm-auto">Delete</a>

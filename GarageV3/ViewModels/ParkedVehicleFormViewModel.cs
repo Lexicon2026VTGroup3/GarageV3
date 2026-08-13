@@ -48,5 +48,6 @@ namespace GarageV3.ViewModels
 
         public string VehicleTypeName { get; set; } = string.Empty;
 
+        public bool IsParked { get; set; }
     }
 }

@@ -109,21 +109,19 @@
                                     <li>
                                         <a class="dropdown-item" asp-controller="AdminVehicleTypes" asp-action="Index">Vehicle Types</a>
                                     </li>
-
                                     <li>
-                                        <a class="dropdown-item"
-                                           asp-controller="UserManagement"
-                                           asp-action="Index">
-                                            User Management
-                                        </a>
+                                        <a class="dropdown-item" asp-controller="AdminParkingSpots" asp-action="Index">Parking Spots</a>
                                     </li>
 
                                     <li>
-                                        <a class="dropdown-item"
-                                           asp-controller="Statistics"
-                                           asp-action="Index">
-                                            Statistics
-                                        </a>
+                                        <a class="dropdown-item" asp-controller="UserManagement" asp-action="Index">User Management</a>
+                                    </li>
+
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Statistics" asp-action="Index">Statistics</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="UserManagement" asp-action="Members">Members </a>
                                     </li>
 
                                 </ul>
@@ -131,9 +129,8 @@
                             </li>
                         }
 
+                        <partial name="_LoginPartial" />
                     </ul>
-
-                    <partial name="_LoginPartial" />
 
                 </div>
             </div>

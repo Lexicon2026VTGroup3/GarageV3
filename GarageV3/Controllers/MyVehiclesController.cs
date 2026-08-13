@@ -29,9 +29,19 @@ public class MyVehiclesController : Controller
     {
         var userId = _userManager.GetUserId(User);
 
+<<<<<<< HEAD
         var activeSessionSpots = _context.ParkingSessions
             .Where(s => s.CheckOutTime == null)
             .Select(s => new { s.VehicleId, s.ParkingSpotId });
+=======
+        var activeSessions = await _context.ParkingSessions
+        .Where(ps => ps.CheckOutTime == null)
+        .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.ParkingSpotId);
+
+        var activeSessionIds = await _context.ParkingSessions
+        .Where(ps => ps.CheckOutTime == null)
+        .ToDictionaryAsync(ps => ps.VehicleId, ps => ps.Id);
+>>>>>>> devTest
 
         var vehicles = await _context.Vehicles
             .Where(v => v.OwnerId == userId)
@@ -47,10 +57,17 @@ public class MyVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
+<<<<<<< HEAD
                 ParkingSpotId = activeSessionSpots
                     .Where(s => s.VehicleId == v.Id)
                     .Select(s => (int?)s.ParkingSpotId)
                     .FirstOrDefault()
+=======
+
+                ParkingSpotId = activeSessions.ContainsKey(v.Id) ? activeSessions[v.Id] : (int?)null,
+
+                ActiveParkingSessionId = activeSessionIds.ContainsKey(v.Id) ? activeSessionIds[v.Id] : (int?)null
+>>>>>>> devTest
             })
             .ToListAsync();
 
@@ -171,6 +188,9 @@ public class MyVehiclesController : Controller
 
         if (vehicle == null) return NotFound();
 
+        bool isParked = await _context.ParkingSessions
+            .AnyAsync(ps => ps.VehicleId == id && ps.CheckOutTime == null);
+
         var vm = new ParkedVehicleFormViewModel
         {
             Id = vehicle.Id,
@@ -181,6 +201,7 @@ public class MyVehiclesController : Controller
             Model = vehicle.Model,
             NumberOfWheels = vehicle.NumberOfWheels,
             ArrivalTime = vehicle.ArrivalTime,
+            IsParked = isParked,
 
             VehicleTypes = await _context.VehicleTypes
                 .Select(vt => new SelectListItem
@@ -242,7 +263,7 @@ public class MyVehiclesController : Controller
                 TempData["SuccessMessage"] = $"Successfully updated {vm.RegistrationNumber}.";
                 return RedirectToAction(nameof(Index));
             }
-            catch (Exception ex)
+            catch
             {
                 ModelState.AddModelError(string.Empty, "Could not save changes.");
             }
@@ -288,6 +309,15 @@ public class MyVehiclesController : Controller
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
         var userId = _userManager.GetUserId(User);
+
+        bool isParked = await _context.ParkingSessions
+            .AnyAsync(ps => ps.VehicleId == id && ps.CheckOutTime == null);
+
+        if (isParked)
+        {
+            TempData["ErrorMessage"] = "Cannot delete: This vehicle is currently parked in the garage.";
+            return RedirectToAction(nameof(Index));
+        }
 
         var vehicle = await _context.Vehicles
             .FirstOrDefaultAsync(v => v.Id == id && v.OwnerId == userId);

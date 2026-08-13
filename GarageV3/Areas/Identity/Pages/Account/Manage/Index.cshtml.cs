@@ -2,14 +2,15 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 
+using GarageV3.Data;
+using GarageV3.Models.Enums;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using GarageV3.Data;
 
 namespace GarageV3.Areas.Identity.Pages.Account.Manage;
 
@@ -61,6 +62,12 @@ public class IndexModel : PageModel
         public string? PhoneNumber { get; set; }
     }
 
+    // US13: Add pro-membership
+    public MembershipType CurrentMembershipType { get; set; }
+    public DateTime? MembershipStartDate { get; set; }
+    public DateTime? MembershipEndDate { get; set; }
+    public bool IsProActive { get; set; }
+
     private async Task LoadAsync(ApplicationUser user)
     {
         var userName = await _userManager.GetUserNameAsync(user);
@@ -72,6 +79,12 @@ public class IndexModel : PageModel
         {
             PhoneNumber = phoneNumber
         };
+
+        // US13: Load pro-membership info for User
+        CurrentMembershipType = user.MembershipType;
+        MembershipStartDate = user.MembershipStartDate;
+        MembershipEndDate = user.MembershipEndDate;
+        IsProActive = user.IsProMember;
     }
 
     public async Task<IActionResult> OnGetAsync()

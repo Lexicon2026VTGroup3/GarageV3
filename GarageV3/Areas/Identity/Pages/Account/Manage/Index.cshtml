@@ -20,6 +20,52 @@
                 <label asp-for="Input.PhoneNumber" class="form-label"></label>
                 <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
             </div>
+
+            <!-- US13: Add pro-membership info -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">You Membership</h5>
+                    @if (Model.IsProActive)
+                    {
+                        <span class="badge bg-success">Active Pro</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Standard / Expired</span>
+                    }
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <strong>Membership Type:</strong> @Model.CurrentMembershipType
+                    </p>
+                    @if (Model.MembershipStartDate.HasValue)
+                    {
+                        <p class="card-text mb-1">
+                            <strong>Start Date:</strong> @Model.MembershipStartDate.Value.ToString("yyyy-MM-dd")
+                        </p>
+                    }
+                    @if (Model.MembershipEndDate.HasValue)
+                    {
+                        <p class="card-text mb-1">
+                            <strong>Expiry Date:</strong> @Model.MembershipEndDate.Value.ToString("yyyy-MM-dd HH:mm")
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                @if (Model.IsProActive)
+                                {
+                                    var daysLeft = (Model.MembershipEndDate.Value - DateTime.UtcNow).Days;
+                                    <span>(@daysLeft days left)</span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger">Your Pro membership has expired.</span>
+                                }
+                            </small>
+                        </p>
+                    }
+                </div>
+            </div>
+
             <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </form>
     </div>

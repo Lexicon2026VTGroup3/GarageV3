@@ -13,6 +13,22 @@
         </a>
     </div>
 
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <form asp-action="Index" method="get" class="mb-4">
         <div class="input-group">
             <input type="text" name="searchQuery" value="@ViewData["CurrentFilter"]" class="form-control" placeholder="Search by owner email..." />
@@ -62,6 +78,14 @@
                             <td>@item.Color</td>
                             <td>@(item.ParkingSpotId.HasValue ? item.ParkingSpotId.ToString() : "Not assigned")</td>
                             <td class="text-end">
+                                @if (!item.ParkingSpotId.HasValue)
+                                {
+                                    <a asp-controller="Parking" asp-action="Park" asp-route-id="@item.Id" class="btn btn-success sv-action-btn w-sm-auto">Park</a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Parking" asp-action="CheckOut" asp-route-id="@item.ActiveParkingSessionId" class="btn btn-warning sv-action-btn w-sm-auto">Check Out</a>
+                                }
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Details</a>
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn sv-btn-details sv-action-btn w-sm-auto">Edit</a>
                                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger sv-action-btn w-sm-auto">Delete</a>
