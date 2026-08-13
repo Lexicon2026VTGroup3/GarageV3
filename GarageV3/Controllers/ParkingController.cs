@@ -1,6 +1,7 @@
 ﻿using GarageV3.Data;
 using GarageV3.Models.Entities;
 using GarageV3.Models.Parking;
+using GarageV3.Helpers;
 using GarageV3.Services;
 using GarageV3.Services.Interfaces;
 using GarageV3.ViewModels.Parking;
@@ -410,7 +411,7 @@ namespace GarageV3.Controllers
                 .Select(v => new SelectListItem
                 {
                     Value = v.Id.ToString(),
-                    Text = v.RegistrationNumber
+                    Text = v.RegistrationNumber + (v.VehicleTypeRef != null ? $" ({VehicleTypeHelper.GetRequiredSpotsString(v.VehicleTypeRef)})" : "")
                 })
                 .ToListAsync();
         }

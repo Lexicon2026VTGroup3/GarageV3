@@ -82,7 +82,7 @@ public static class DbInitializer
             new VehicleTypeEntity { Name = "Motorcycle", ShortName = "MC", Icon = "🏍️", BadgeColor = "#FECC02", BadgeTextColor = "#1a1a1a", RequiredSpots = 1, MaxVehiclesPerSpot = 3, RequiredSpaceUnits = 1 },
             new VehicleTypeEntity { Name = "Bus", ShortName = "Bus", Icon = "🚌", BadgeColor = "#1a7a4c", BadgeTextColor = "#ffffff", RequiredSpots = 2, MaxVehiclesPerSpot = 1, RequiredSpaceUnits = 6 },
             new VehicleTypeEntity { Name = "Truck", ShortName = "Truck", Icon = "🚚", BadgeColor = "#2c3e50", BadgeTextColor = "#ffffff", RequiredSpots = 3, MaxVehiclesPerSpot = 1, RequiredSpaceUnits = 6 },
-            new VehicleTypeEntity { Name = "Bicycle", ShortName = "Bike", Icon = "🚲", BadgeColor = "#6b7280", BadgeTextColor = "#ffffff", RequiredSpots = 1, MaxVehiclesPerSpot = 5, RequiredSpaceUnits = 1 },
+            new VehicleTypeEntity { Name = "Bicycle", ShortName = "Bike", Icon = "🚲", BadgeColor = "#6b7280", BadgeTextColor = "#ffffff", RequiredSpots = 1, MaxVehiclesPerSpot = 3, RequiredSpaceUnits = 1 },
             new VehicleTypeEntity { Name = "Airplane", ShortName = "Plane", Icon = "✈", BadgeColor = "#6b7280", BadgeTextColor = "#ffffff", RequiredSpots = 3, MaxVehiclesPerSpot = 1, RequiredSpaceUnits = 9 },
             new VehicleTypeEntity { Name = "Boat", ShortName = "Boat", Icon = "🚤", BadgeColor = "#0891b2", BadgeTextColor = "#ffffff", RequiredSpots = 2, MaxVehiclesPerSpot = 1, RequiredSpaceUnits = 6 }
         };
