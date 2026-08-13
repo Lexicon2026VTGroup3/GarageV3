@@ -310,19 +310,6 @@ namespace GarageV3.Controllers
             return RedirectToAction(nameof(Receipt), new { id = session.Id });
         }
 
-        // GET: Parking/Receipt
-        public IActionResult Receipt()
-        {
-            if (TempData["Receipt"] is not string json)
-            {
-                return RedirectToAction("Index", "MyVehicles");
-            }
-
-            var receipt = JsonSerializer.Deserialize<ReceiptViewModel>(json);
-
-            return View(receipt);
-        }
-
         // GET: Parking/Receipt/5
         public IActionResult Receipt(int? id)
         {
