@@ -75,12 +75,16 @@
 
                 <tr>
                     <th style="width:35%">Arrival Time</th>
-                    <td>@Model.ArrivalTime.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td class="local-time-display" data-utc='@Model.ArrivalTime.ToString("o")'>
+                        @Model.ArrivalTime.ToString("yyyy-MM-dd HH:mm") UTC
+                    </td>
                 </tr>
 
                 <tr>
                     <th>Check Out Time</th>
-                    <td>@Model.CheckOutTime.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td class="local-time-display" data-utc='@Model.CheckOutTime.ToString("o")'>
+                        @Model.CheckOutTime.ToString("yyyy-MM-dd HH:mm") UTC
+                    </td>
                 </tr>
 
                 <tr>
@@ -94,12 +98,26 @@
 
                 <tr>
                     <th>Parking Spot</th>
-                    <td>@SpotHelper.GetSpotDisplay(Model.AssignedSpotNumber, Model.VehicleTypeName)</td>
+                    <td>@SpotHelper.GetSpotDisplay(Model.ParkingSpotId, Model.VehicleTypeName)</td>
                 </tr>
 
                 <tr>
                     <th>Hourly Rate At Check In</th>
                     <td>@Model.HourlyRateAtCheckIn.ToString("0.00") SEK</td>
+                </tr>
+
+                <tr>
+                    <th>Applied Discount</th>
+                    <td>
+                        @if (Model.AppliedDiscountPercentage > 0)
+                        {
+                            <strong class="text-danger">Pro-discount (-@((Model.AppliedDiscountPercentage * 100).ToString("0"))%)</strong>
+						}
+						else
+						{
+                            <strong class="text-success">Ingen rabatt</strong>
+						}
+                    </td>
                 </tr>
 
                 <tr class="table-success">
@@ -127,12 +145,19 @@
                 onclick="window.print()">
             Print Receipt
         </button>
+        <a asp-action="History" class="btn sv-btn-create d-print-none">
+            Back to My History
+        </a>
+        <a asp-action="Index" asp-controller="MyVehicles" 
+            class="btn sv-btn-create d-print-none">
+            Back to My Vehicles
+        </a>
 
-            <a asp-controller="@Model.ReturnController"
-               asp-action="Index"
-               class="btn sv-btn-create d-print-none">
-                Back to Garage
-            </a>
+         <a asp-controller="@Model.ReturnController"
+            asp-action="Index"
+            class="btn sv-btn-create d-print-none">
+            Back
+         </a>
 
     </div>
 

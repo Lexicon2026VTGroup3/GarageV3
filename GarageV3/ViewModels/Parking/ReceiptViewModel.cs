@@ -16,8 +16,7 @@
         public string Color { get; set; } = string.Empty;
 
         public int NumberOfWheels { get; set; }
-
-        public int? AssignedSpotNumber { get; set; }
+        public int? ParkingSpotId { get; set; }
 
         public DateTime ArrivalTime { get; set; }
 
@@ -28,6 +27,8 @@
         public decimal HourlyRateAtCheckIn { get; set; }
 
         public decimal TotalPrice { get; set; }
+        
+        public decimal AppliedDiscountPercentage { get; set; }
 
         public string ReturnController { get; set; } = "MyVehicles";
     }

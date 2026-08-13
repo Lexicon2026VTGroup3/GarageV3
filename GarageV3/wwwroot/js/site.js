@@ -58,27 +58,75 @@ function fadeOutSuccessAlert() {
     }, 3000);
 }
 
-function calculateTotalPrice(arrivalTimeString, hourlyRate) {
-    const arrival = new Date(arrivalTimeString);
-    const now = new Date();
+// function calculateTotalPrice(arrivalTimeString, hourlyRate) {
+//     const arrival = new Date(arrivalTimeString);
+//     const now = new Date();
 
-    const durationMs = now - arrival;
-    const durationHours = durationMs / (1000 * 60 * 60);
+//     const durationMs = now - arrival;
+//     const durationHours = durationMs / (1000 * 60 * 60);
 
-    const totalPrice = durationHours * hourlyRate;
+//     const totalPrice = durationHours * hourlyRate;
 
-    return totalPrice.toFixed(2);
+//     return totalPrice.toFixed(2);
+// }
+
+// function updateTotalPrices() {
+//     const cells = document.querySelectorAll(".total-price-cell");
+
+//     cells.forEach(cell => {
+//         const arrival = cell.dataset.arrivalTime;
+//         const rate = parseFloat(cell.dataset.hourlyRate);
+
+//         const price = calculateTotalPrice(arrival, rate);
+
+//         cell.textContent = price + " kr";
+//     });
+// }
+
+async function calculateTotalPrice(arrivalTimeString, hourlyRate, isPro) {
+    try {
+        const url = `/api/parking/calculate-fee?arrivalTime=${encodeURIComponent(arrivalTimeString)}&hourlyRate=${encodeURIComponent(hourlyRate)}&isPro=${encodeURIComponent(isPro)}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error("Cannot fetch fee");
+        }
+
+        const data = await response.json();
+        return data.totalPrice.toFixed(2);
+    } catch (error) {
+        console.error("Error while calculating price:", error);
+        return "0.00";
+    }
 }
 
-function updateTotalPrices() {
+async function updateTotalPrices() {
     const cells = document.querySelectorAll(".total-price-cell");
+    if (!cells) return;
 
-    cells.forEach(cell => {
+    await Promise.all(Array.from(cells).map(async (cell) => {
         const arrival = cell.dataset.arrivalTime;
-        const rate = parseFloat(cell.dataset.hourlyRate);
+        const hourlyRate = Number(cell.dataset.hourlyRate);
+        const isPro = cell.dataset.isPro === 'true';
 
-        const price = calculateTotalPrice(arrival, rate);
-
+        const price = await calculateTotalPrice(arrival, hourlyRate, isPro);
         cell.textContent = price + " kr";
-    });
+    }));
 }
+
+// 1. Convert initial UTC time labels to user's browser local time
+document.querySelectorAll(".local-time-display").forEach(el => {
+    const utcString = el.dataset.utc;
+    if (utcString) {
+        const localDate = new Date(utcString);
+
+        el.textContent = localDate.toLocaleString([], {
+            weekday: 'long',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+});

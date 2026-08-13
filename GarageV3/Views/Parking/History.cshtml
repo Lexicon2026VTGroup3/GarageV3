@@ -1,0 +1,237 @@
+@using GarageV3.Helpers
+
+@model IEnumerable<GarageV3.ViewModels.Parking.ParkingHistoryViewModel>
+
+@{
+    ViewData["Title"] = "My Parking History";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div id="successAlert" class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">
+        <div>@TempData["ErrorMessage"]</div>
+        <button type="button" class="btn-close position-relative p-0" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="container mt-4">
+    @* <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+        <form asp-action="History" method="get" class="d-flex align-items-center m-0">
+            <div class="input-group">
+                <input type="text"
+                    id="searchBox"
+                    name="searchString"
+                    class="form-control"
+                    placeholder="Search text"
+                    value="@Context.Request.Query["searchString"]"
+                    autofocus
+                />
+                <input type="text"
+                    id="searchTimeBox"
+                    name="searchTime"
+                    class="form-control"
+                    placeholder="Search Time"
+                    value="@Context.Request.Query["searchTime"]"
+                />
+
+                <button type="submit" class="btn sv-btn-create">Search</button>
+
+                @if (!string.IsNullOrEmpty(ViewData["CurrentFilter"] as string) ||
+                    !string.IsNullOrEmpty(ViewData["CurrentTimeFilter"] as string))
+                {
+                    <a asp-action="History"
+                       class="btn sv-badge-sm text-dark py-0 d-inline-flex align-items-center fs-6">
+                        Clear
+                    </a>
+                }
+            </div>
+        </form>
+    </div> *@
+
+    @if (!Model.Any())
+    {
+        @if (!string.IsNullOrEmpty(ViewData["CurrentFilter"] as string) || !string.IsNullOrEmpty(ViewData["CurrentTimeFilter"] as string))
+        {
+            var searchFilterText = string.Join(" / ", 
+                new[] { ViewData["CurrentFilter"] as string, ViewData["CurrentTimeFilter"] as string }
+                .Where(s => !string.IsNullOrEmpty(s)));
+
+            <div class="alert alert-warning text-center mt-4" role="alert">
+                No parking records found matching <strong>"@searchFilterText"</strong>.
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info text-center mt-4" role="alert">
+                No parking history found.
+            </div>
+        }
+    }
+    else
+    {
+        <div class="mb-3 text-muted">
+            <strong>@Model.Count()</strong> @(Model.Count() == 1 ? "parking record found." : "parking records found.")
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover sv-table align-middle">
+                <thead>
+                    <tr>
+                        <th>
+                            <a asp-action="History"
+                               asp-route-sortOrder="@ViewData["TypeSortParm"]"
+                               asp-route-searchString="@ViewData["CurrentFilter"]"
+                               class="sv-nav-link">
+                                Vehicle Type
+                                @if (ViewData["CurrentSort"]?.ToString() == "TypeAsc")
+                                {
+                                    <span>▲</span>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "TypeDesc")
+                                {
+
+                                    <span>▼</span>
+                                }
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="History"
+                               asp-route-sortOrder="@ViewData["RegSortParm"]"
+                               asp-route-searchString="@ViewData["CurrentFilter"]"
+                               class="sv-nav-link">
+                                Registration Number
+                                @if (ViewData["CurrentSort"]?.ToString() == "RegAsc")
+                                {
+                                    <span>▲</span>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "RegDesc")
+                                {
+
+                                    <span>▼</span>
+                                }
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="History"
+                               asp-route-sortOrder="@ViewData["SpotSortParm"]"
+                               asp-route-searchString="@ViewData["CurrentFilter"]"
+                               class="sv-nav-link">
+                                Parking Spot
+                                @if (ViewData["CurrentSort"]?.ToString() == "SpotAsc")
+                                {
+                                    <span>▲</span>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "SpotDesc")
+                                {
+
+                                    <span>▼</span>
+                                }
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="History"
+                               asp-route-sortOrder="@ViewData["DateSortParm"]"
+                               asp-route-searchTime="@ViewData["CurrentTimeFilter"]"
+                               class="sv-nav-link">
+                                Arrival Time
+                                @if (ViewData["CurrentSort"]?.ToString() == "DateAsc")
+                                {
+                                    <span>▲</span>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "DateDesc")
+                                {
+                                    <span>▼</span>
+                                }
+                                else if (string.IsNullOrEmpty(ViewData["CurrentSort"] as string))
+                                {
+                                    <span>▼</span>
+                                }
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="History"
+                               asp-route-sortOrder="@ViewData["DurationSortParm"]"
+                               asp-route-searchTime="@ViewData["CurrentTimeFilter"]"
+                               class="sv-nav-link">
+                                Parked Duration
+                                @if (ViewData["CurrentSort"]?.ToString() == "DurationAsc")
+                                {
+                                    <span>▲</span>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "DurationDesc")
+                                {
+                                    <span>▼</span>
+                                }
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="History"
+                               asp-route-sortOrder="@ViewData["HourlyRateSortParm"]"
+                               asp-route-searchTime="@ViewData["CurrentTimeFilter"]"
+                               class="sv-nav-link">
+                                Hourly Rate
+                                @if (ViewData["CurrentSort"]?.ToString() == "HourlyRateAsc")
+                                {
+                                    <span>▲</span>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "HourlyRateDesc")
+                                {
+                                    <span>▼</span>
+                                }
+                            </a>
+                        </th>
+                        <th>
+                            <a asp-action="History"
+                               asp-route-sortOrder="@ViewData["TotalPriceSortParm"]"
+                               asp-route-searchTime="@ViewData["CurrentTimeFilter"]"
+                               class="sv-nav-link">
+                                Total Price
+                                @if (ViewData["CurrentSort"]?.ToString() == "TotalPriceAsc")
+                                {
+                                    <span>▲</span>
+                                }
+                                else if (ViewData["CurrentSort"]?.ToString() == "TotalPriceDesc")
+                                {
+                                    <span>▼</span>
+                                }
+                            </a>
+                        </th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><span>@Html.DisplayFor(modelItem => item.VehicleTypeDisplay)</span></td>
+                            <td><strong>@Html.DisplayFor(modelItem => item.RegistrationNumber)</strong></td>
+                            <td>@SpotHelper.GetSpotDisplay(item.ParkingSpotId, item.RequiredSpots)</td>
+                            <td class="local-time-display" data-utc='@item.ArrivalTime.ToString("o")'>
+                                @item.ArrivalTime.ToString("ddd, dd MMM yyyy, HH:mm")
+                            </td>
+                            <td>@item.ParkedDuration.ToString(@"dd\.hh\:mm")</td>
+							<td>@item.HourlyRateAtCheckIn.ToString("C")</td>
+                            <td>@item.TotalPrice.ToString("C")</td>
+                            <td class="text-end">
+                                <a asp-action="PrintReceipt" asp-route-id="@item.SessionId" class="btn sv-btn-details sv-action-btn w-sm-auto">Print</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        fadeOutSuccessAlert();
+    </script>
+}

@@ -1,0 +1,132 @@
+﻿@model IEnumerable<GarageV3.ViewModels.UserManagement.MemberOverviewViewModel>
+
+@{
+    ViewData["Title"] = "Members";
+}
+
+<div class="container">
+
+    <h1 class="mb-4">Members</h1>
+
+    <form asp-action="Members" method="get" class="mb-4">
+        <div class="row g-2">
+
+            <div class="col-md-5">
+                <input type="text"
+                       name="search"
+                       value="@ViewData["Search"]"
+                       class="form-control"
+                       placeholder="Search by name, username, email or personal identity number..." />
+            </div>
+
+            <div class="col-md-2">
+                <select name="vehicleFilter" class="form-select">
+                    <option value="all"
+                            selected="@(ViewData["VehicleFilter"]?.ToString() == "all" ? "selected" : null)">
+                        All vehicles
+                    </option>
+
+                    <option value="withVehicles"
+                            selected="@(ViewData["VehicleFilter"]?.ToString() == "withVehicles" ? "selected" : null)">
+                        Has vehicles
+                    </option>
+
+                    <option value="withoutVehicles"
+                            selected="@(ViewData["VehicleFilter"]?.ToString() == "withoutVehicles" ? "selected" : null)">
+                        No vehicles
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="parkingFilter" class="form-select">
+                    <option value="all"
+                            selected="@(ViewData["ParkingFilter"]?.ToString() == "all" ? "selected" : null)">
+                        All parking
+                    </option>
+
+                    <option value="active"
+                            selected="@(ViewData["ParkingFilter"]?.ToString() == "active" ? "selected" : null)">
+                        Active parking
+                    </option>
+
+                    <option value="inactive"
+                            selected="@(ViewData["ParkingFilter"]?.ToString() == "inactive" ? "selected" : null)">
+                        No active parking
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100">
+                    Filter
+                </button>
+            </div>
+
+            <div class="col-md-2">
+                <a asp-action="Members"
+                   class="btn btn-secondary w-100">
+                    Reset
+                </a>
+            </div>
+
+        </div>
+    </form>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            No members found.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Personal Identity Number</th>
+                        <th>Registered Vehicles</th>
+                        <th>Active Parking Cost</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var member in Model)
+                    {
+                        <tr>
+                            <td>@member.FullName</td>
+
+                            <td>@member.UserName</td>
+
+                            <td>@member.Email</td>
+
+                            <td>@member.PersonalIdentityNumber</td>
+
+                            <td>@member.RegisteredVehiclesCount</td>
+
+                            <td>
+                                @member.ActiveParkingTotalCost.ToString("0.00") SEK
+                            </td>
+
+                            <td>
+                                <a asp-action="Details"
+                                   asp-route-id="@member.Id"
+                                   class="btn btn-sm btn-primary">
+                                    Details
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    }
+
+</div>

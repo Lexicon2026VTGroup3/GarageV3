@@ -1,5 +1,6 @@
 ﻿using GarageV3.Data;
 using GarageV3.Models.Entities;
+using GarageV3.Services;
 using GarageV3.Services.Interfaces;
 using GarageV3.ViewModels.Parking;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using static System.Collections.Specialized.BitVector32;
 
 namespace GarageV3.Controllers
 {
@@ -17,15 +19,113 @@ namespace GarageV3.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IParkingSessionService _parkingSessionService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly GarageFeeService _garageFeeService;
 
         public ParkingController(
             ApplicationDbContext context,
             IParkingSessionService parkingSessionService,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            GarageFeeService garageFeeService
+        )
         {
             _context = context;
             _parkingSessionService = parkingSessionService;
             _userManager = userManager;
+            _garageFeeService = garageFeeService;
+        }
+
+        // GET: /Parking
+        public IActionResult Index()
+        {
+            return RedirectToAction("Index", "MyVehicles");
+        }
+
+        // GET: Parking/History
+        [HttpGet]
+        public async Task<IActionResult> History()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Challenge();
+            }
+
+            var historySessions = await _context.ParkingSessions
+                .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null && ps.Vehicle.Owner != null && ps.Vehicle.Owner.Id == currentUser.Id)
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v!.VehicleTypeRef)
+                .Include(ps => ps.ParkingSpot)
+                .OrderByDescending(ps => ps.ArriveTime)
+                .Select(ps => new ParkingHistoryViewModel
+                {
+                    SessionId = ps.Id,
+                    RegistrationNumber = (ps.Vehicle != null && ps.Vehicle.RegistrationNumber != null) ? ps.Vehicle.RegistrationNumber : string.Empty,
+                    VehicleTypeName = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.Name : "Unknown",
+                    VehicleTypeIcon = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.Icon : string.Empty,
+                    RequiredSpots = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.RequiredSpots : 1,
+                    ParkingSpotId = (ps.ParkingSpot != null) ? ps.ParkingSpot.Id : -1,
+                    ArrivalTime = ps.ArriveTime,
+                    CheckOutTime = (ps.CheckOutTime != null) ? ps.CheckOutTime.Value : DateTime.MinValue,
+                    HourlyRateAtCheckIn = ps.HourlyRateAtCheckIn,
+                    TotalPrice = ps.TotalPrice ?? 0
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            return View(historySessions);
+        }
+
+        // GET: Parking/PrintReceipt
+        [HttpGet]
+        public async Task<IActionResult> PrintReceipt(int id)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Challenge();
+            }
+
+            var session = await _context.ParkingSessions
+                .Where(ps => ps.CheckOutTime != null && ps.Vehicle != null)
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v!.Owner)
+                .Include(ps => ps.Vehicle)
+                    .ThenInclude(v => v!.VehicleTypeRef)
+                .Include(ps => ps.ParkingSpot)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(ps => ps.Id == id);
+
+            if (session == null || session.Vehicle == null)
+            {
+                TempData["ErrorMessage"] = "Unable to print receipt. The parking session was not found or is not checked out yet.";
+                return RedirectToAction(nameof(History));
+            }
+            if (session.Vehicle.Owner == null || session.Vehicle.Owner.Id != currentUser.Id)
+            {
+                TempData["ErrorMessage"] = "You are not allowed to print others' receipt.";
+                return RedirectToAction(nameof(History));
+            }
+
+            var receiptViewModel = new ReceiptViewModel
+            {
+                OwnerEmail = session.Vehicle.Owner?.Email ?? "No Owner",
+                VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
+                RegistrationNumber = session.Vehicle.RegistrationNumber,
+                Brand = session.Vehicle.Brand,
+                Model = session.Vehicle.Model,
+                Color = session.Vehicle.Color,
+                NumberOfWheels = session.Vehicle.NumberOfWheels,
+                ParkingSpotId = session.ParkingSpot?.Id ?? -1,
+                ArrivalTime = session.ArriveTime,
+                CheckOutTime = session.CheckOutTime ?? DateTime.UtcNow,
+                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
+                TotalPrice = session.TotalPrice ?? 0,
+                AppliedDiscountPercentage = session.AppliedDiscountPercentage
+            };
+
+            TempData["Receipt"] = JsonSerializer.Serialize(receiptViewModel);
+
+            return RedirectToAction(nameof(Receipt), new { id });
         }
 
         // GET: Parking/Park
@@ -100,7 +200,7 @@ namespace GarageV3.Controllers
                 await _parkingSessionService.StartSessionAsync(viewModel.ParkingSpotId, viewModel.VehicleId);
 
                 TempData["SuccessMessage"] = "Vehicle parked successfully.";
-                return RedirectToAction("Index", "ParkedVehicles");
+                return RedirectToAction("Index", "MyVehicles");
             }
 
             viewModel.Vehicles = await BuildOwnedUnparkedVehiclesSelectListAsync(userId!);
@@ -109,12 +209,17 @@ namespace GarageV3.Controllers
             return View(viewModel);
         }
 
-        // GET: PARKEDVEHICLES/CheckOut/5
-        public async Task<IActionResult> CheckOut(int? id)
+        // GET: Parking/CheckOut/5
+        public async Task<IActionResult> CheckOut(int id)
         {
-            if (id == null) return NotFound();
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Challenge();
+            }
 
             var session = await _context.ParkingSessions
+                .Where(ps => ps.CheckOutTime == null && ps.Vehicle != null)
                 .Include(ps => ps.Vehicle)
                     .ThenInclude(v => v.Owner)
                 .Include(ps => ps.Vehicle)
@@ -123,66 +228,99 @@ namespace GarageV3.Controllers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(ps => ps.Id == id);
 
-            if (session == null || session.Vehicle == null) return NotFound();
+            if (session == null || session.Vehicle == null)
+            {
+                TempData["ErrorMessage"] = "Unable to checkout. The parking session was not found or is already checked out.";
+                return RedirectToAction("Index", "MyVehicles");
+            }
+
+            var currentUserId = currentUser.Id;
+            bool isAdmin = User.IsInRole("Admin");
+            bool isOwner = session.Vehicle.Owner?.Id == currentUserId;
+            bool isPro = currentUser.IsProMember;
+
+            if (!isAdmin && !isOwner)
+            {
+                return Forbid(); // Returns HTTP 403 Forbidden / Access Denied
+            }
+
+            var arriveTimeUtc = DateTime.SpecifyKind(session.ArriveTime, DateTimeKind.Utc);
 
             var viewModel = new CheckOutViewModel
             {
                 ParkingSessionId = session.Id,
-                OwnerEmail = session.Vehicle.Owner?.Email ?? "No Owner",
+                OwnerEmail = ((session.Vehicle.Owner is null) || (session.Vehicle.Owner.Email is null)) ?
+                    "No Owner" :
+                    session.Vehicle.Owner.Email,
                 RegistrationNumber = session.Vehicle.RegistrationNumber,
                 Brand = session.Vehicle.Brand,
                 Model = session.Vehicle.Model,
                 Color = session.Vehicle.Color,
                 NumberOfWheels = session.Vehicle.NumberOfWheels,
+                VehicleType = session.Vehicle.VehicleTypeRef,
                 VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
                 ParkingSpotId = session.ParkingSpot?.Id ?? -1,
-                CheckInTime = session.ArriveTime,
-                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn
+                CheckInTime = arriveTimeUtc,
+                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
+                IsProMember = isPro,
+                TotalPrice = _garageFeeService.CalculateFee(arriveTimeUtc, DateTime.UtcNow, session.HourlyRateAtCheckIn, isPro),
+                AppliedDiscountPercentage = isPro ? 0.20m : 0
             };
 
             return View(viewModel);
         }
 
-        // POST: PARKEDVEHICLES/CheckOut/5
+        // POST: Parking/CheckOut/5
         [HttpPost, ActionName("CheckOut")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CheckOut(int? parkingSessionId, CheckOutViewModel vm)
+        public async Task<IActionResult> CheckOutConfirmed(int id)
         {
-            if (parkingSessionId == null)
-            {
-                TempData["ErrorMessage"] = "Invalid session ID.";
-                return RedirectToAction("Index");
-            }
-
-            var session = await _parkingSessionService.CompleteSessionAsync(parkingSessionId.Value);
+            var session = await _parkingSessionService.CompleteSessionAsync(id);
 
             if (session == null || session.Vehicle == null)
             {
-                TempData["ErrorMessage"] = "Unable to checkout. The parking session was not found.";
-                return RedirectToAction("CheckOut", new { id = parkingSessionId });
+                TempData["ErrorMessage"] = "Unable to checkout. The parking session was not found or is already checked out.";
+                return RedirectToAction("Index", "MyVehicles");
             }
 
             var returnCtrl = User.IsInRole("Admin") ? "AdminVehicles" : "MyVehicles";
 
             var receiptViewModel = new ReceiptViewModel
             {
+                OwnerEmail = session.Vehicle.Owner?.Email ?? "No Owner",
                 VehicleTypeName = session.Vehicle.VehicleTypeRef?.Name ?? "Unknown",
                 RegistrationNumber = session.Vehicle.RegistrationNumber,
                 Brand = session.Vehicle.Brand,
                 Model = session.Vehicle.Model,
                 Color = session.Vehicle.Color,
                 NumberOfWheels = session.Vehicle.NumberOfWheels,
-                AssignedSpotNumber = session.ParkingSpot?.Number ?? -1,
+                ParkingSpotId = session.ParkingSpot?.Id ?? -1,
                 ArrivalTime = session.ArriveTime,
                 CheckOutTime = session.CheckOutTime ?? DateTime.UtcNow,
+                HourlyRateAtCheckIn = session.HourlyRateAtCheckIn,
                 TotalPrice = session.TotalPrice ?? 0,
+                AppliedDiscountPercentage = session.AppliedDiscountPercentage,
                 ReturnController = returnCtrl
             };
 
             TempData["Receipt"] = JsonSerializer.Serialize(receiptViewModel);
+
             TempData["SuccessMessage"] = $"Successfully checked out {receiptViewModel.RegistrationNumber}.";
 
-            return RedirectToAction("Receipt", new { id = session.Id });
+            return RedirectToAction(nameof(Receipt), new { id = session.Id });
+        }
+
+        // GET: Parking/Receipt
+        public IActionResult Receipt()
+        {
+            if (TempData["Receipt"] is not string json)
+            {
+                return RedirectToAction("Index", "MyVehicles");
+            }
+
+            var receipt = JsonSerializer.Deserialize<ReceiptViewModel>(json);
+
+            return View(receipt);
         }
 
         // GET: Parking/Receipt/5
