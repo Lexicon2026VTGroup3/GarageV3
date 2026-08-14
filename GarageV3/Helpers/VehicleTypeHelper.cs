@@ -60,13 +60,4 @@ public static class VehicleTypeHelper
 
         return filtered.Append(hintOption);
     }
-
-    public static string GetRequiredSpotsString(VehicleTypeEntity vt) 
-    {
-        if (vt.MaxVehiclesPerSpot > 1)
-        {
-            return $"1/{vt.MaxVehiclesPerSpot}";
-        }
-        return vt.RequiredSpots.ToString();
-    }
 }
