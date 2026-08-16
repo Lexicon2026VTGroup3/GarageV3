@@ -54,121 +54,45 @@
                     <tr>
                         <th>
                             <a asp-action="History"
-                               asp-route-sortOrder="@ViewData["TypeSortParm"]"
-                               asp-route-searchString="@ViewData["CurrentFilter"]"
                                class="sv-nav-link">
                                 Vehicle Type
-                                @if (ViewData["CurrentSort"]?.ToString() == "TypeAsc")
-                                {
-                                    <span>▲</span>
-                                }
-                                else if (ViewData["CurrentSort"]?.ToString() == "TypeDesc")
-                                {
-
-                                    <span>▼</span>
-                                }
                             </a>
                         </th>
                         <th>
                             <a asp-action="History"
-                               asp-route-sortOrder="@ViewData["RegSortParm"]"
-                               asp-route-searchString="@ViewData["CurrentFilter"]"
                                class="sv-nav-link">
                                 Registration Number
-                                @if (ViewData["CurrentSort"]?.ToString() == "RegAsc")
-                                {
-                                    <span>▲</span>
-                                }
-                                else if (ViewData["CurrentSort"]?.ToString() == "RegDesc")
-                                {
-
-                                    <span>▼</span>
-                                }
                             </a>
                         </th>
                         <th>
                             <a asp-action="History"
-                               asp-route-sortOrder="@ViewData["SpotSortParm"]"
-                               asp-route-searchString="@ViewData["CurrentFilter"]"
                                class="sv-nav-link">
                                 Parking Spot
-                                @if (ViewData["CurrentSort"]?.ToString() == "SpotAsc")
-                                {
-                                    <span>▲</span>
-                                }
-                                else if (ViewData["CurrentSort"]?.ToString() == "SpotDesc")
-                                {
-
-                                    <span>▼</span>
-                                }
                             </a>
                         </th>
                         <th>
                             <a asp-action="History"
-                               asp-route-sortOrder="@ViewData["DateSortParm"]"
-                               asp-route-searchTime="@ViewData["CurrentTimeFilter"]"
                                class="sv-nav-link">
                                 Arrival Time
-                                @if (ViewData["CurrentSort"]?.ToString() == "DateAsc")
-                                {
-                                    <span>▲</span>
-                                }
-                                else if (ViewData["CurrentSort"]?.ToString() == "DateDesc")
-                                {
-                                    <span>▼</span>
-                                }
-                                else if (string.IsNullOrEmpty(ViewData["CurrentSort"] as string))
-                                {
-                                    <span>▼</span>
-                                }
+                                <span>▼</span>
                             </a>
                         </th>
                         <th>
                             <a asp-action="History"
-                               asp-route-sortOrder="@ViewData["DurationSortParm"]"
-                               asp-route-searchTime="@ViewData["CurrentTimeFilter"]"
                                class="sv-nav-link">
                                 Parked Duration
-                                @if (ViewData["CurrentSort"]?.ToString() == "DurationAsc")
-                                {
-                                    <span>▲</span>
-                                }
-                                else if (ViewData["CurrentSort"]?.ToString() == "DurationDesc")
-                                {
-                                    <span>▼</span>
-                                }
                             </a>
                         </th>
                         <th>
                             <a asp-action="History"
-                               asp-route-sortOrder="@ViewData["HourlyRateSortParm"]"
-                               asp-route-searchTime="@ViewData["CurrentTimeFilter"]"
                                class="sv-nav-link">
                                 Hourly Rate
-                                @if (ViewData["CurrentSort"]?.ToString() == "HourlyRateAsc")
-                                {
-                                    <span>▲</span>
-                                }
-                                else if (ViewData["CurrentSort"]?.ToString() == "HourlyRateDesc")
-                                {
-                                    <span>▼</span>
-                                }
                             </a>
                         </th>
                         <th>
                             <a asp-action="History"
-                               asp-route-sortOrder="@ViewData["TotalPriceSortParm"]"
-                               asp-route-searchTime="@ViewData["CurrentTimeFilter"]"
                                class="sv-nav-link">
                                 Total Price
-                                @if (ViewData["CurrentSort"]?.ToString() == "TotalPriceAsc")
-                                {
-                                    <span>▲</span>
-                                }
-                                else if (ViewData["CurrentSort"]?.ToString() == "TotalPriceDesc")
-                                {
-                                    <span>▼</span>
-                                }
                             </a>
                         </th>
                         <th class="text-center">Actions</th>

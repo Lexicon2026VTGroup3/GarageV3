@@ -142,6 +142,8 @@ namespace GarageV3.Controllers
                     SessionId = ps.Id,
                     RegistrationNumber = (ps.Vehicle != null && ps.Vehicle.RegistrationNumber != null) ? ps.Vehicle.RegistrationNumber : string.Empty,
                     VehicleTypeName = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.Name : "Unknown",
+                    VehicleTypeIcon = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.Icon : "Unknown",
+                    RequiredSpots = (ps.Vehicle != null && ps.Vehicle.VehicleTypeRef != null) ? ps.Vehicle.VehicleTypeRef.RequiredSpots : 0,
                     ParkingSpotId = (ps.ParkingSpot != null) ? ps.ParkingSpot.Id : -1,
                     ArrivalTime = ps.ArriveTime,
                     CheckOutTime = (ps.CheckOutTime != null) ? ps.CheckOutTime.Value : DateTime.MinValue,
