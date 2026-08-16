@@ -30,7 +30,9 @@ namespace GarageV3.Services
 
             if (plan == null)
             {
-                return AllocationResult.Fail($"No available spot(s) for {vehicleType.Name} right now.");
+                return AllocationResult.Fail(preferredSpotId != null && preferredSpotId > 0 ?
+                    $"The selected spot is not available for {vehicleType.Name} right now."
+                    : $"No available spot(s) for {vehicleType.Name} right now.");
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -93,7 +95,7 @@ namespace GarageV3.Services
             if (spots.Count == 0) return null;
 
             var usedUnitsBySpot = await _context.ParkingAllocations
-                .Where(a => a.ParkingSession!.CheckOutTime == null)
+                .Where(a => a.ParkingSession != null && a.ParkingSession.CheckOutTime == null)
                 .GroupBy(a => a.ParkingSpotId)
                 .Select(g => new { SpotId = g.Key, Used = g.Sum(a => a.UnitsUsed) })
                 .ToDictionaryAsync(x => x.SpotId, x => x.Used);
@@ -101,13 +103,44 @@ namespace GarageV3.Services
             int FreeUnits(ParkingSpot spot) =>
                 spot.CapacityUnits - usedUnitsBySpot.GetValueOrDefault(spot.Id, 0);
 
+            //if (preferredSpotId != null)
+            //{
+            //    var preferred = spots.FirstOrDefault(s => s.Id == preferredSpotId);
+            //    if (preferred != null && requiredUnits <= preferred.CapacityUnits && FreeUnits(preferred) >= requiredUnits)
+            //    {
+            //        return new List<(int, int)> { (preferred.Id, requiredUnits) };
+            //    }
+            //}
+
+            // In Park.cshtml, if the preferred spot is not available, let user choose another spot.
             if (preferredSpotId != null)
             {
                 var preferred = spots.FirstOrDefault(s => s.Id == preferredSpotId);
-                if (preferred != null && requiredUnits <= preferred.CapacityUnits && FreeUnits(preferred) >= requiredUnits)
+                if (preferred is null) return null;
+
+                if (requiredUnits <= preferred.CapacityUnits)
                 {
-                    return new List<(int, int)> { (preferred.Id, requiredUnits) };
+                    if (FreeUnits(preferred) >= requiredUnits)
+                    {
+                        return new List<(int, int)> { (preferred.Id, requiredUnits) };
+                    }
+                    return null;
                 }
+
+                // When RequirdSpots > 1, it is to say that requiredUnits = 6 or 9.
+                int index = spots.IndexOf(preferred);
+                int spotsNeeded = requiredUnits == 9 ? 3 : 2;
+
+                if (index != -1 && index + spotsNeeded <= spots.Count)
+                {
+                    var targetSpots = spots.GetRange(index, spotsNeeded);
+                    if (targetSpots.All(s => FreeUnits(s) == s.CapacityUnits))
+                    {
+                        return targetSpots.Select(s => (s.Id, s.CapacityUnits)).ToList();
+                    }
+                }
+
+                return null;
             }
 
             var singleSpot = spots.FirstOrDefault(s =>
