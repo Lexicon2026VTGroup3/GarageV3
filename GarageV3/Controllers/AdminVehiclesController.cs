@@ -54,6 +54,7 @@ public class AdminVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
+                RequiredSpots = (v.VehicleTypeRef != null) ? v.VehicleTypeRef.RequiredSpots : 0,
 
                 ActiveParkingSessionId = activeSessions
                     .Where(s => s.VehicleId == v.Id)

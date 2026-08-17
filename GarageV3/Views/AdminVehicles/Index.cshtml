@@ -1,4 +1,6 @@
-﻿@model List<AdminVehiclesIndexViewModel>
+﻿@using GarageV3.Helpers
+
+@model List<AdminVehiclesIndexViewModel>
 
 @{
     ViewData["Title"] = "All User Vehicle Management";
@@ -76,7 +78,7 @@
                             <td><strong>@item.RegistrationNumber</strong></td>
                             <td>@item.Brand @item.Model</td>
                             <td>@item.Color</td>
-                            <td>@(item.ParkingSpotId.HasValue ? item.ParkingSpotId.ToString() : "Not assigned")</td>
+                            <td>@SpotHelper.GetSpotDisplay(item.ParkingSpotId, item.RequiredSpots)</td>
                             <td class="text-end">
                                 @if (!item.ParkingSpotId.HasValue)
                                 {

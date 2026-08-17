@@ -47,6 +47,8 @@ public class MyVehiclesController : Controller
                 ArrivalTime = v.ArrivalTime,
                 VehicleTypeName = v.VehicleTypeRef != null ? v.VehicleTypeRef.Name : "Unknown",
                 VehicleTypeIcon = v.VehicleTypeRef != null ? v.VehicleTypeRef.Icon : "Unknown",
+                RequiredSpots = (v.VehicleTypeRef != null) ? v.VehicleTypeRef.RequiredSpots : 0,
+
                 ParkingSpotId = activeSessions
                     .Where(s => s.VehicleId == v.Id)
                     .Select(s => (int?)s.ParkingSpotId)
