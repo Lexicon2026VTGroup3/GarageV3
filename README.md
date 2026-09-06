@@ -73,6 +73,5 @@ GarageV3 separates vehicle registration from parking events:
 * GitHub Project (GitHub Kanban board: 17 parent issues, 123 sub‑issues)
 
 ## ▶️ Run the Project
-cd GarageV3
-
+cd GarageV3  
 dotnet run
